@@ -34,25 +34,25 @@
   }
 
   addGlobalStyle(`
-  
+
     .profileCard {
     height: initial ! important;
     //width: initial ! important;
     }
-  
+
     .profileCard__slider__backLink {
     //width: 375px ! important;
     }
-  
+
     .Maw\(650px\) {
     max-width: initial ! important
     }
-  
+
     .tfastBtn {
     color: green;
     background: black;
     }
-  
+
     `);
 
   let activated = true;
@@ -64,26 +64,35 @@
     return btn;
   }
 
-  function removeAllEventListeners(old_element) {
-    return old_element;
-    var new_element = old_element.cloneNode(true);
-    old_element.parentNode.replaceChild(new_element, old_element);
-    return new_element;
+  function revertChoice() {
+    document
+      .evaluate("//a[contains(., 'Back')]", document)
+      .iterateNext()
+      .click(); // turn off profile expand to Rewind button comes back up
+    setTimeout(() => {
+      document
+        .evaluate("//button[contains(., 'Rewind')]", document)
+        .iterateNext()
+        .click();
+    }, 50);
   }
 
   function startup() {
     let workmodeBtn = document.getElementsByClassName("workmodeBtn")[0];
     if (workmodeBtn) {
-      const navElement = workmodeBtn.parentElement;
-      workmodeBtn = removeAllEventListeners(workmodeBtn);
-      let onOffButton = newBtn(scriptName);
-      workmodeBtn.onclick = onOffButton.onclick = function () {
+      function toggle() {
         activated = !activated;
         console.log(`${scriptName} ${activated}`);
-      };
+      }
 
-      navElement.appendChild(onOffButton);
-      navElement.insertBefore(onOffButton, navElement.firstChild);
+      workmodeBtn.addEventListener(
+        "click",
+        (event) => {
+          toggle();
+          event.stopPropagation(); // stop "Work mode" activation
+        },
+        true
+      );
     }
 
     document.addEventListener("keydown", (e) => {
@@ -93,6 +102,9 @@
           break;
         case "Numpad0":
           nextImg();
+          break;
+        case "PageDown":
+          revertChoice();
           break;
         case "Insert":
           activated = !activated;
@@ -174,7 +186,6 @@
       (imgBtn) => imgBtns[0].parentElement === imgBtn.parentElement
     ); // filterout buttons from other sections (such as instagram)
     let previousWasActive = false;
-    console.log(imgBtns);
     for (const imgBtn of [...imgBtns, ...imgBtns]) {
       if (previousWasActive) {
         imgBtn.click();
