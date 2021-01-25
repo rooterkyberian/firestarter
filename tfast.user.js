@@ -1,23 +1,73 @@
 // ==UserScript==
 // @name         Tfast
-// @namespace    http://tampermonkey.net/
+// @namespace    https://kyberian.net/
 // @version      0.2
 // @description  Improved tinder UI & keyboard shortcuts
 // @author       RooTer
 // @match        https://tinder.com/*
 // @grant        none
+// @require      https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/a4a49b47ecfb1d8fcd27049cc0e8114d05522a0f/gm_config.js
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_addStyle
 // ==/UserScript==
 
 (function () {
   "use strict";
 
   const settings = {
-    autoSwipeLeft: true,
-    distanaceLimit: 50,
-    heightLimit: 175,
+    activated: true,
   };
 
   const scriptName = "Tfast";
+
+  GM_config.init({
+    id: `${scriptName}Config`,
+    title: `${scriptName} Config`,
+    fields: {
+      none: {
+        // without this as first item "activated" gets ignored for some reason during save
+        type: "hidden",
+      },
+      activated: {
+        label: "activated",
+        type: "checkbox",
+        default: true,
+      },
+      autoSwipeLeft: {
+        label: "autoSwipeLeft",
+        type: "checkbox",
+        default: false,
+      },
+
+      distanaceLimit: {
+        label: "distanaceLimit",
+        type: "number",
+        default: 60,
+      },
+
+      heightLimit: {
+        label: "heightLimit",
+        type: "number",
+        default: 175,
+      },
+
+      intrestsBlacklist: {
+        label: "Intrests blacklist",
+        title: "comma seperated",
+        default: "Astrology",
+      },
+    },
+
+    events: {
+      open: function () {
+        GM_config.get("activated", settings.activated);
+      },
+      save: function () {
+        settings.activated = GM_config.get("activated");
+      },
+    },
+  });
 
   function allProfileImages() {
     const backgroundImageStyles = Array.from(
@@ -60,15 +110,6 @@
     }
 
     `);
-
-  let activated = true;
-
-  function newBtn(text) {
-    let btn = document.createElement("button");
-    btn.innerHTML = text;
-    btn.className = "tfastBtn";
-    return btn;
-  }
 
   function revertChoice() {
     document
@@ -136,9 +177,9 @@
    */
   function bioGetSocial(bio) {
     const social = {
-      instagram: ["ig", "instagram", "insta"],
+      instagram: ["ig", "instagram", "inst", "insta", "instagram.com"],
       snapchat: ["snapchat", "snap", "👻"],
-      facebook: ["fb", "facebook"],
+      facebook: ["fb", "facebook", "facebook.com"],
     };
     const revertSocialMap = {};
     for (const [socialNetworkName, aliases] of Object.entries(social)) {
@@ -148,11 +189,11 @@
     }
     const allSocialNames = [].concat.apply([], Object.values(social));
     const re = RegExp(
-      `\\b(${allSocialNames.join("|")})[:\\s@]*(\\w+)\\b`,
+      `\\b(${allSocialNames.join("|")})[:\\s@/]*([\\w.]+)(\\b|👻)`,
       "gi"
     );
     const foundSocialArr = Array(...bio.matchAll(re)).map((m) => [
-      revertSocialMap[m[1]],
+      revertSocialMap[m[1].toLowerCase()],
       m[2],
     ]);
     return Object.fromEntries(foundSocialArr);
@@ -167,6 +208,7 @@
 
   function getIntrests() {
     const knownIntrests = [
+      "Astrology",
       "Wine",
       "Dancing",
       "Photography",
@@ -216,29 +258,21 @@
         document.evaluate(".//text()", intrestsParentNode)
       ).map((textNode) => textNode.textContent)
     );
-    if (intrests.has("Woman")) {
-      // bugged out
-      intrests = new Set();
-    }
     return intrests;
   }
 
   function startup() {
     let workmodeBtn = document.getElementsByClassName("workmodeBtn")[0];
     if (workmodeBtn) {
-      function toggle() {
-        activated = !activated;
-        console.log(`${scriptName} ${activated}`);
-      }
-
       workmodeBtn.addEventListener(
         "click",
         (event) => {
-          toggle();
+          GM_config.open();
           event.stopPropagation(); // stop "Work mode" activation
         },
         true
       );
+      console.log("Workmode overriden");
     }
 
     document.addEventListener("keydown", (e) => {
@@ -253,14 +287,14 @@
           revertChoice();
           break;
         case "Insert":
-          activated = !activated;
+          settings.activated = !settings.activated;
           break;
         default:
           console.log("keydown", e);
       }
     });
   }
-  setTimeout(startup, 1000);
+  setTimeout(startup, 2000);
 
   const targetNode = document.getElementById("content");
 
@@ -298,7 +332,7 @@
     expandProfile();
 
     function rejectNrefresh() {
-      if (settings.autoSwipeLeft) {
+      if (GM_config.get("autoSwipeLeft")) {
         console.log("Swipe left due", ...arguments);
         swipeLeft();
         setTimeout(viewChanged, 250);
@@ -314,21 +348,31 @@
     if (distance) {
       console.log("Distance:", distance);
     }
-    if (distance && distance > settings.distanaceLimit) {
+    if (distance && distance > GM_config.get("distanaceLimit")) {
       rejectNrefresh("distance:", distance);
     }
     const intrests = getIntrests();
-    if (intrests && intrests.length > 0) {
+    if (intrests && intrests.size > 0) {
       console.log(intrests);
+      const blacklistedIntrests = GM_config.get("intrestsBlacklist")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (blacklistedIntrests.some((e) => intrests.has(e))) {
+        rejectNrefresh("intrests:", intrests);
+      }
     }
     const bio = getBio();
     if (bio) {
       console.log("Bio:", bio);
       const height = bioExtractHeight(bio);
-      if (height && height > settings.heightLimit) {
+      if (height && height > GM_config.get("heightLimit")) {
         rejectNrefresh("height:", height);
       }
       const social = bioGetSocial(bio);
+      if (Object.keys(social).length) {
+        console.log("social", social);
+      }
       for (const [socialNetworkName, name] of Object.entries(social)) {
         if (name.includes("vip")) {
           rejectNrefresh(`social[${socialNetworkName}]:`, name);
@@ -340,7 +384,7 @@
   const callback = function (mutationsList, observer) {
     for (let mutation of mutationsList) {
       if (mutation.type === "childList" && mutation.addedNodes.length) {
-        if (activated) {
+        if (settings.activated) {
           if (debounceTimeout) {
             clearTimeout(debounceTimeout);
           }
