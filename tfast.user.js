@@ -1,15 +1,21 @@
 // ==UserScript==
 // @name         Tfast
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  Improved tinder UI & keyboard shortcuts
-// @author       You
+// @author       RooTer
 // @match        https://tinder.com/*
 // @grant        none
 // ==/UserScript==
 
 (function () {
   "use strict";
+
+  const settings = {
+    autoSwipeLeft: true,
+    distanaceLimit: 50,
+    heightLimit: 175,
+  };
 
   const scriptName = "Tfast";
 
@@ -77,6 +83,146 @@
     }, 50);
   }
 
+  function expandProfile() {
+    press({
+      keyCode: 38,
+      key: "ArrowUp",
+      code: "ArrowUp",
+    });
+    const e = document.getElementsByClassName("recCard");
+    if (e && e.length) {
+      e[0].click();
+    }
+  }
+
+  function swipeLeft() {
+    press({ key: "ArrowLeft", code: "ArrowLeft", keyCode: 37 });
+  }
+
+  function getDistance() {
+    const match = document.body.innerHTML.match(/(\d+) kilometers away/);
+    if (!match) {
+      return null;
+    }
+    const distance = Number(match[1]);
+    return distance;
+  }
+
+  function getBio() {
+    const bioDiv = document.querySelector("hr:first-of-type + div");
+    if (!bioDiv) return null;
+    return bioDiv.innerText;
+  }
+
+  /**
+   *
+   * @param {string} bio
+   * @returns {number}
+   */
+  function bioExtractHeight(bio) {
+    const low = 140,
+      high = 195;
+    const nums = Array(...bio.matchAll(/\b(\d{3})(cm)?\b/g))
+      .map((m) => m[1])
+      .filter((h) => h < high && h > low);
+    if (nums.length) {
+      return nums[0];
+    }
+    return null;
+  }
+
+  /**
+   * @param {string} bio
+   */
+  function bioGetSocial(bio) {
+    const social = {
+      instagram: ["ig", "instagram", "insta"],
+      snapchat: ["snapchat", "snap", "👻"],
+      facebook: ["fb", "facebook"],
+    };
+    const revertSocialMap = {};
+    for (const [socialNetworkName, aliases] of Object.entries(social)) {
+      aliases.forEach((alias) => {
+        revertSocialMap[alias] = socialNetworkName;
+      });
+    }
+    const allSocialNames = [].concat.apply([], Object.values(social));
+    const re = RegExp(
+      `\\b(${allSocialNames.join("|")})[:\\s@]*(\\w+)\\b`,
+      "gi"
+    );
+    const foundSocialArr = Array(...bio.matchAll(re)).map((m) => [
+      revertSocialMap[m[1]],
+      m[2],
+    ]);
+    return Object.fromEntries(foundSocialArr);
+  }
+
+  function xpathResultsToArray(xpathResult) {
+    let node,
+      nodes = [];
+    while ((node = xpathResult.iterateNext())) nodes.push(node);
+    return nodes;
+  }
+
+  function getIntrests() {
+    const knownIntrests = [
+      "Wine",
+      "Dancing",
+      "Photography",
+      "Tattoos",
+      "Grab a drink",
+      "Soccer",
+      "Sports",
+      "Netflix",
+      "Walking",
+      "Coffee",
+      "Dog lover",
+      "Hiking",
+      "Art",
+      "Reading",
+      "Tea",
+      "Running",
+      "Travel",
+      "Foodie",
+      "Music",
+      "Outdoors",
+      "Movies",
+      "Politics",
+      "Volunteering",
+      "Cat lover",
+    ];
+    const separator = "\uFFFF";
+
+    const concatedList = knownIntrests.join(separator) + separator;
+    const profileCard = document.querySelector(".profileCard__card");
+    if (!profileCard) return null;
+    let intrestsParentNode;
+    {
+      const xpath = `.//*[text() and contains("${concatedList}", concat(text(), "${separator}"))]/..`;
+      const xpathResult = document.evaluate(
+        xpath,
+        profileCard,
+        null,
+        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE
+      );
+      intrestsParentNode = xpathResult.snapshotItem(
+        xpathResult.snapshotLength - 1
+      );
+    }
+    if (!intrestsParentNode) return new Set();
+    let intrests = new Set(
+      xpathResultsToArray(
+        document.evaluate(".//text()", intrestsParentNode)
+      ).map((textNode) => textNode.textContent)
+    );
+    if (intrests.has("Woman")) {
+      // bugged out
+      intrests = new Set();
+    }
+    return intrests;
+  }
+
   function startup() {
     let workmodeBtn = document.getElementsByClassName("workmodeBtn")[0];
     if (workmodeBtn) {
@@ -110,8 +256,7 @@
           activated = !activated;
           break;
         default:
-          console.log(e);
-          console.log(e.code);
+          console.log("keydown", e);
       }
     });
   }
@@ -147,26 +292,64 @@
 
   // Callback function to execute when mutations are observed
   //
-  let clickDebounce = false;
+  let debounceTimeout = null;
+
+  function viewChanged() {
+    expandProfile();
+
+    function rejectNrefresh() {
+      if (settings.autoSwipeLeft) {
+        console.log("Swipe left due", ...arguments);
+        swipeLeft();
+        setTimeout(viewChanged, 250);
+      } else {
+        console.log(
+          "autoSwipeLeft disabled; would have swiped left due",
+          ...arguments
+        );
+      }
+    }
+
+    const distance = getDistance();
+    if (distance) {
+      console.log("Distance:", distance);
+    }
+    if (distance && distance > settings.distanaceLimit) {
+      rejectNrefresh("distance:", distance);
+    }
+    const intrests = getIntrests();
+    if (intrests && intrests.length > 0) {
+      console.log(intrests);
+    }
+    const bio = getBio();
+    if (bio) {
+      console.log("Bio:", bio);
+      const height = bioExtractHeight(bio);
+      if (height && height > settings.heightLimit) {
+        rejectNrefresh("height:", height);
+      }
+      const social = bioGetSocial(bio);
+      for (const [socialNetworkName, name] of Object.entries(social)) {
+        if (name.includes("vip")) {
+          rejectNrefresh(`social[${socialNetworkName}]:`, name);
+        }
+      }
+    }
+  }
 
   const callback = function (mutationsList, observer) {
     for (let mutation of mutationsList) {
       if (mutation.type === "childList" && mutation.addedNodes.length) {
-        if (activated && !clickDebounce) {
-          clickDebounce = true;
-          setTimeout(function () {
-            press({
-              keyCode: 38,
-              key: "ArrowUp",
-              code: "ArrowUp",
-            });
-            const e = document.getElementsByClassName("recCard");
-            if (e && e.length) {
-              e[0].click();
-            }
-            clickDebounce = false;
+        if (activated) {
+          if (debounceTimeout) {
+            clearTimeout(debounceTimeout);
+          }
+          debounceTimeout = setTimeout(function () {
+            viewChanged();
+            debounceTimeout = null;
           }, 250);
         }
+        break;
       }
     }
   };
