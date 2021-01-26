@@ -54,6 +54,7 @@
 
       intrestsBlacklist: {
         label: "Intrests blacklist",
+        type: "text",
         title: "comma seperated",
         default: "Astrology",
       },
