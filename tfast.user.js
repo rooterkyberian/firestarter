@@ -5,11 +5,10 @@
 // @description  Improved tinder UI & keyboard shortcuts
 // @author       RooTer
 // @match        https://tinder.com/*
-// @grant        none
 // @require      https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/a4a49b47ecfb1d8fcd27049cc0e8114d05522a0f/gm_config.js
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @grant        GM_addStyle
+// @grant        GM_notification
 // ==/UserScript==
 
 (function () {
@@ -334,7 +333,14 @@
 
     function rejectNrefresh() {
       if (GM_config.get("autoSwipeLeft")) {
-        console.log("Swipe left due", ...arguments);
+        console.log("Swiped left due", ...arguments);
+        GM_notification(
+          "Swiped left due" +
+            Array.from(arguments)
+              .map((e) => String(e))
+              .join(" "),
+          scriptName
+        );
         swipeLeft();
         setTimeout(viewChanged, 250);
       } else {
