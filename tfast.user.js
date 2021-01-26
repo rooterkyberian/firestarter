@@ -196,7 +196,7 @@
       revertSocialMap[m[1].toLowerCase()],
       m[2],
     ]);
-    return Object.fromEntries(foundSocialArr);
+    return Object.fromEntries(foundSocialArr.reverse());
   }
 
   function xpathResultsToArray(xpathResult) {
