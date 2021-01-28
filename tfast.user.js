@@ -351,7 +351,7 @@
             "Swiped left due " +
             Array.from(arguments)
               .map((e) =>
-                typeof value === "object"
+                typeof e === "object"
                   ? JSON.stringify(e, toPlainString)
                   : String(e)
               )
