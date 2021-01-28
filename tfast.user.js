@@ -288,6 +288,11 @@
           break;
         case "Insert":
           settings.activated = !settings.activated;
+
+          GM_notification({
+            text: `${scriptName} activated=${settings.activated}`,
+            title: scriptName,
+          });
           break;
         default:
           console.log("keydown", e);
@@ -328,21 +333,33 @@
   //
   let debounceTimeout = null;
 
-  function viewChanged() {
+  function recViewChanged() {
     expandProfile();
 
     function rejectNrefresh() {
       if (GM_config.get("autoSwipeLeft")) {
         console.log("Swiped left due", ...arguments);
-        GM_notification(
-          "Swiped left due" +
+
+        function toPlainString(key, value) {
+          if (typeof value === "object" && value instanceof Set) {
+            return [...value];
+          }
+          return value;
+        }
+        GM_notification({
+          text:
+            "Swiped left due " +
             Array.from(arguments)
-              .map((e) => String(e))
+              .map((e) =>
+                typeof value === "object"
+                  ? JSON.stringify(e, toPlainString)
+                  : String(e)
+              )
               .join(" "),
-          scriptName
-        );
+          title: scriptName,
+        });
         swipeLeft();
-        setTimeout(viewChanged, 250);
+        setTimeout(recViewChanged, 250);
       } else {
         console.log(
           "autoSwipeLeft disabled; would have swiped left due",
@@ -388,6 +405,10 @@
     }
   }
 
+  function isRecsLocation() {
+    return !!window.location.pathname.match(/^\/app\/(recs|matches)\b/);
+  }
+
   const callback = function (mutationsList, observer) {
     for (let mutation of mutationsList) {
       if (mutation.type === "childList" && mutation.addedNodes.length) {
@@ -396,7 +417,9 @@
             clearTimeout(debounceTimeout);
           }
           debounceTimeout = setTimeout(function () {
-            viewChanged();
+            if (isRecsLocation()) {
+              recViewChanged();
+            }
             debounceTimeout = null;
           }, 250);
         }
