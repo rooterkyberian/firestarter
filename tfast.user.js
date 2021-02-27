@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Tfast
-// @namespace    https://kyberian.net/
-// @version      0.2
+// @namespace    firestarter
+// @version      0.3
 // @description  Improved tinder UI & keyboard shortcuts
 // @author       RooTer
 // @match        https://tinder.com/*
