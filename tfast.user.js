@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Tfast
 // @namespace    firestarter
-// @version      0.3
+// @version      2021.02.27
 // @description  Improved tinder UI & keyboard shortcuts
 // @author       RooTer
 // @match        https://tinder.com/*
