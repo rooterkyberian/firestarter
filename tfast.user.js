@@ -177,8 +177,8 @@
    */
   function bioGetSocial(bio) {
     const social = {
-      instagram: ["ig", "instagram", "inst", "insta", "instagram.com"],
-      snapchat: ["snapchat", "snap", "👻"],
+      instagram: ["ig", "instagram", "inst", "insta", "instagram.com", "📸"],
+      snapchat: ["snapchat", "s/c", "snap", "👻", "s/c👻"],
       facebook: ["fb", "facebook", "facebook.com"],
     };
     const revertSocialMap = {};
@@ -301,7 +301,7 @@
   }
   setTimeout(startup, 2000);
 
-  const targetNode = document.getElementById("content");
+  const targetNode = document.body;
 
   const commonKeyEventData = {
     altKey: false,
@@ -328,10 +328,6 @@
 
   // Options for the observer (which mutations to observe)
   const config = { attributes: false, childList: true, subtree: true };
-
-  // Callback function to execute when mutations are observed
-  //
-  let debounceTimeout = null;
 
   function recViewChanged() {
     expandProfile();
@@ -409,7 +405,8 @@
     return !!window.location.pathname.match(/^\/app\/(recs|matches)\b/);
   }
 
-  const callback = function (mutationsList, observer) {
+  let debounceTimeout = null;
+  const mutationCallback = function (mutationsList, observer) {
     for (let mutation of mutationsList) {
       if (mutation.type === "childList" && mutation.addedNodes.length) {
         if (settings.activated) {
@@ -428,7 +425,7 @@
     }
   };
 
-  const observer = new MutationObserver(callback);
+  const observer = new MutationObserver(mutationCallback);
   observer.observe(targetNode, config);
 
   function nextImg() {
