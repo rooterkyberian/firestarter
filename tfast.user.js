@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Tfast
 // @namespace    firestarter
-// @version      2021.02.27
+// @version      2021.03.05
 // @description  Improved tinder UI & keyboard shortcuts
 // @author       RooTer
 // @match        https://tinder.com/*
@@ -163,8 +163,9 @@
   function bioExtractHeight(bio) {
     const low = 140,
       high = 195;
-    const nums = Array(...bio.matchAll(/\b(\d{3})(cm)?\b/g))
-      .map((m) => m[1])
+    const nums = Array(...bio.matchAll(/\b(\d{3}|\d\.\d\d)(cm)?\b/g))
+      .map((m) => Number(m[1]))
+      .map((n) => (n < 3 ? n * 100 : n))
       .filter((h) => h < high && h > low);
     if (nums.length) {
       return nums[0];
@@ -430,12 +431,12 @@
 
   function nextImg() {
     let imgBtns = Array.from(
-      document
-        .querySelector(
-          ".profileCard__card, *[itemtype='http://schema.org/Person']"
-        )
-        .querySelectorAll("*[data-cy-active]")
+      document.querySelector(".profileCard__card").querySelectorAll("button")
     );
+    imgBtns = imgBtns.filter((imgBtn) => imgBtn.textContent.match(/([\d]\/)+/));
+    if (!imgBtns.length) {
+      return;
+    }
     imgBtns = imgBtns.filter(
       (imgBtn) => imgBtns[0].parentElement === imgBtn.parentElement
     ); // filterout buttons from other sections (such as instagram)
@@ -445,7 +446,7 @@
         imgBtn.click();
         break;
       }
-      previousWasActive = imgBtn.dataset.cyActive === "true";
+      previousWasActive = imgBtn.classList.contains("bullet--active");
     }
   }
 })();
