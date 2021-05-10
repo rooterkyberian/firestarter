@@ -12,4 +12,4 @@ Disclaimer:
 ## Install
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/)
-2. Install [tfast.user.js](https://github.com/rooterkyberian/firestarter/raw/main/tfast.user.js)
+2. Install [firestarter.user.js](https://github.com/rooterkyberian/firestarter/raw/main/build/firestarter.user.js)

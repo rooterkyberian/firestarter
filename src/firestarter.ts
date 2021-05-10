@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Tfast
+// @name         firestarter
 // @namespace    firestarter
 // @version      2021.03.05
 // @description  Improved tinder UI & keyboard shortcuts
@@ -11,14 +11,17 @@
 // @grant        GM_notification
 // ==/UserScript==
 
-(function () {
-  "use strict";
+declare var GM_config: any, GM_notification: any;
 
+import { knownIntrests } from "./tin";
+import { arrayAsString } from "./utils";
+
+(function () {
   const settings = {
     activated: true,
   };
 
-  const scriptName = "Tfast";
+  const scriptName = "firestarter";
 
   GM_config.init({
     id: `${scriptName}Config`,
@@ -57,6 +60,13 @@
         title: "comma seperated",
         default: "Astrology",
       },
+
+      requiredRegexp: {
+        label: "Reject if bio doesn't match regexp",
+        type: "text",
+        title: "regexp",
+        default: "",
+      },
     },
 
     events: {
@@ -73,7 +83,7 @@
     const backgroundImageStyles = Array.from(
       document.querySelectorAll("div.recsPage div")
     )
-      .map((node) => node.style["background-image"])
+      .map((node) => (node as HTMLElement).style["background-image"])
       .filter(Boolean);
   }
 
@@ -104,7 +114,7 @@
     max-width: initial ! important
     }
 
-    .tfastBtn {
+    .firestarterBtn {
     color: green;
     background: black;
     }
@@ -112,15 +122,13 @@
     `);
 
   function revertChoice() {
-    document
+    (document
       .evaluate("//a[contains(., 'Back')]", document)
-      .iterateNext()
-      .click(); // turn off profile expand to Rewind button comes back up
+      .iterateNext() as HTMLElement).click(); // turn off profile expand to Rewind button comes back up
     setTimeout(() => {
-      document
+      (document
         .evaluate("//button[contains(., 'Rewind')]", document)
-        .iterateNext()
-        .click();
+        .iterateNext() as HTMLElement).click();
     }, 50);
   }
 
@@ -132,7 +140,7 @@
     });
     const e = document.getElementsByClassName("recCard");
     if (e && e.length) {
-      e[0].click();
+      (e[0] as HTMLElement).click();
     }
   }
 
@@ -150,9 +158,18 @@
   }
 
   function getBio() {
-    const bioDiv = document.querySelector("hr:first-of-type + div");
+    const bioDiv = document.querySelector(
+      "hr:first-of-type + div"
+    ) as HTMLElement;
     if (!bioDiv) return null;
     return bioDiv.innerText;
+  }
+
+  function getReportButton() {
+    const reportBtns = Array.from(
+      document.querySelectorAll("button")
+    ).filter((btn) => btn.innerText.startsWith("REPORT "));
+    return reportBtns.length ? reportBtns[0] : null;
   }
 
   /**
@@ -190,7 +207,7 @@
     }
     const allSocialNames = [].concat.apply([], Object.values(social));
     const re = RegExp(
-      `\\b(${allSocialNames.join("|")})[:\\s@/]*([\\w.]+)(\\b|👻)`,
+      `\\b(${allSocialNames.join("|")})[:\\s@/]*([a-z\\d_-]{4,})(\\b|👻)`,
       "gi"
     );
     const foundSocialArr = Array(...bio.matchAll(re)).map((m) => [
@@ -207,34 +224,27 @@
     return nodes;
   }
 
+  function getOrAddChildNode(parent, id, tag = "div") {
+    let node = document.getElementById(id);
+    if (!node) {
+      node = document.createElement("div");
+      node.id = id;
+      parent.appendChild(node);
+    }
+
+    return node;
+  }
+
+  function createLink(text, href) {
+    const a = document.createElement("a");
+    const linkText = document.createTextNode(text);
+    a.appendChild(linkText);
+    a.href = href;
+    a.target = "_blank";
+    return a;
+  }
+
   function getIntrests() {
-    const knownIntrests = [
-      "Astrology",
-      "Wine",
-      "Dancing",
-      "Photography",
-      "Tattoos",
-      "Grab a drink",
-      "Soccer",
-      "Sports",
-      "Netflix",
-      "Walking",
-      "Coffee",
-      "Dog lover",
-      "Hiking",
-      "Art",
-      "Reading",
-      "Tea",
-      "Running",
-      "Travel",
-      "Foodie",
-      "Music",
-      "Outdoors",
-      "Movies",
-      "Politics",
-      "Volunteering",
-      "Cat lover",
-    ];
     const separator = "\uFFFF";
 
     const concatedList = knownIntrests.join(separator) + separator;
@@ -318,7 +328,10 @@
     eventPhase: 0,
   };
 
-  function press({ keyCode, charCode, key }, evtTarget) {
+  function press(
+    { keyCode, charCode, key }: Partial<KeyboardEvent>,
+    evtTarget = null
+  ) {
     if (!evtTarget) {
       evtTarget = document.getElementsByTagName("body")[0];
     }
@@ -333,26 +346,12 @@
   function recViewChanged() {
     expandProfile();
 
-    function rejectNrefresh() {
+    function rejectNrefresh(...args: any[]) {
       if (GM_config.get("autoSwipeLeft")) {
-        console.log("Swiped left due", ...arguments);
+        console.log("Swiped left due", ...args);
 
-        function toPlainString(key, value) {
-          if (typeof value === "object" && value instanceof Set) {
-            return [...value];
-          }
-          return value;
-        }
         GM_notification({
-          text:
-            "Swiped left due " +
-            Array.from(arguments)
-              .map((e) =>
-                typeof e === "object"
-                  ? JSON.stringify(e, toPlainString)
-                  : String(e)
-              )
-              .join(" "),
+          text: "Swiped left due " + arrayAsString(Array.from(arguments)),
           title: scriptName,
         });
         swipeLeft();
@@ -360,7 +359,7 @@
       } else {
         console.log(
           "autoSwipeLeft disabled; would have swiped left due",
-          ...arguments
+          ...args
         );
       }
     }
@@ -394,9 +393,41 @@
       if (Object.keys(social).length) {
         console.log("social", social);
       }
-      for (const [socialNetworkName, name] of Object.entries(social)) {
+      for (const [socialNetworkName, name] of Object.entries(social) as Array<
+        [string, string]
+      >) {
         if (name.includes("vip")) {
           rejectNrefresh(`social[${socialNetworkName}]:`, name);
+        }
+      }
+
+      {
+        const requiredRegexp = (GM_config.get("requiredRegexp") || "").trim();
+        if (requiredRegexp && !bio.match(RegExp(requiredRegexp, "i"))) {
+          rejectNrefresh(`bio did not match regexp`);
+        }
+      }
+
+      let socialLinksDiv = null;
+      {
+        const reportBtn = getReportButton();
+        if (reportBtn) {
+          socialLinksDiv = getOrAddChildNode(
+            reportBtn.parentNode,
+            "socialLinks"
+          );
+        }
+      }
+      if (socialLinksDiv) {
+        socialLinksDiv.innerHTML = "";
+        const instagramName = social["instagram"];
+        if (instagramName) {
+          socialLinksDiv.appendChild(
+            createLink(
+              `instagram: ${instagramName}`,
+              `https://instagram.com/${instagramName}`
+            )
+          );
         }
       }
     }
