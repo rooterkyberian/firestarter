@@ -1,20 +1,7 @@
-// ==UserScript==
-// @name         firestarter
-// @namespace    firestarter
-// @version      2021.03.05
-// @description  Improved tinder UI & keyboard shortcuts
-// @author       RooTer
-// @match        https://tinder.com/*
-// @require      https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/a4a49b47ecfb1d8fcd27049cc0e8114d05522a0f/gm_config.js
-// @grant        GM_getValue
-// @grant        GM_setValue
-// @grant        GM_notification
-// ==/UserScript==
-
 declare var GM_config: any, GM_notification: any;
 
 import { knownIntrests } from "./tin";
-import { arrayAsString } from "./utils";
+import { addGlobalStyle, arrayAsString, press } from "./utils";
 
 (function () {
   const settings = {
@@ -87,18 +74,6 @@ import { arrayAsString } from "./utils";
       .filter(Boolean);
   }
 
-  function addGlobalStyle(css) {
-    var head, style;
-    head = document.getElementsByTagName("head")[0];
-    if (!head) {
-      return;
-    }
-    style = document.createElement("style");
-    style.type = "text/css";
-    style.innerHTML = css;
-    head.appendChild(style);
-  }
-
   addGlobalStyle(`
 
     .profileCard {
@@ -148,7 +123,7 @@ import { arrayAsString } from "./utils";
     press({ key: "ArrowLeft", code: "ArrowLeft", keyCode: 37 });
   }
 
-  function getDistance() {
+  function getDistance(): number {
     const match = document.body.innerHTML.match(/(\d+) kilometers away/);
     if (!match) {
       return null;
@@ -157,7 +132,7 @@ import { arrayAsString } from "./utils";
     return distance;
   }
 
-  function getBio() {
+  function getBio(): string | null {
     const bioDiv = document.querySelector(
       "hr:first-of-type + div"
     ) as HTMLElement;
@@ -172,15 +147,10 @@ import { arrayAsString } from "./utils";
     return reportBtns.length ? reportBtns[0] : null;
   }
 
-  /**
-   *
-   * @param {string} bio
-   * @returns {number}
-   */
-  function bioExtractHeight(bio) {
+  function bioExtractHeight(bio: string): number {
     const low = 140,
       high = 195;
-    const nums = Array(...bio.matchAll(/\b(\d{3}|\d\.\d\d)(cm)?\b/g))
+    const nums = Array.from(bio.matchAll(/\b(\d{3}|\d\.\d\d)(cm)?\b/g))
       .map((m) => Number(m[1]))
       .map((n) => (n < 3 ? n * 100 : n))
       .filter((h) => h < high && h > low);
@@ -190,10 +160,7 @@ import { arrayAsString } from "./utils";
     return null;
   }
 
-  /**
-   * @param {string} bio
-   */
-  function bioGetSocial(bio) {
+  function bioGetSocial(bio: string) {
     const social = {
       instagram: ["ig", "instagram", "inst", "insta", "instagram.com", "📸"],
       snapchat: ["snapchat", "s/c", "snap", "👻", "s/c👻"],
@@ -210,7 +177,7 @@ import { arrayAsString } from "./utils";
       `\\b(${allSocialNames.join("|")})[:\\s@/]*([a-z\\d_-]{4,})(\\b|👻)`,
       "gi"
     );
-    const foundSocialArr = Array(...bio.matchAll(re)).map((m) => [
+    const foundSocialArr = Array.from(bio.matchAll(re)).map((m) => [
       revertSocialMap[m[1].toLowerCase()],
       m[2],
     ]);
@@ -313,32 +280,6 @@ import { arrayAsString } from "./utils";
   setTimeout(startup, 2000);
 
   const targetNode = document.body;
-
-  const commonKeyEventData = {
-    altKey: false,
-    bubbles: true,
-    cancelBubble: false,
-    cancelable: true,
-    charCode: 0,
-    composed: true,
-    ctrlKey: false,
-    currentTarget: null,
-    defaultPrevented: true,
-    detail: 0,
-    eventPhase: 0,
-  };
-
-  function press(
-    { keyCode, charCode, key }: Partial<KeyboardEvent>,
-    evtTarget = null
-  ) {
-    if (!evtTarget) {
-      evtTarget = document.getElementsByTagName("body")[0];
-    }
-    const evtData = { ...commonKeyEventData, keyCode, charCode, key };
-    evtTarget.dispatchEvent(new KeyboardEvent("keydown", evtData));
-    evtTarget.dispatchEvent(new KeyboardEvent("keyup", evtData));
-  }
 
   // Options for the observer (which mutations to observe)
   const config = { attributes: false, childList: true, subtree: true };
