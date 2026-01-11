@@ -31,9 +31,7 @@ export function App() {
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
           🔥 Firestarter
         </h1>
-        <p className="text-sm text-gray-600">
-          Enhanced Tinder Experience
-        </p>
+        <p className="text-sm text-gray-600">Enhanced Tinder Experience</p>
       </div>
 
       {/* Settings Form */}
@@ -175,10 +173,20 @@ export function App() {
           ⌨️ Keyboard Shortcuts
         </h3>
         <ul className="text-xs text-blue-800 space-y-1">
-          <li><kbd className="px-1 bg-white rounded">Insert</kbd> - Toggle activation</li>
-          <li><kbd className="px-1 bg-white rounded">PageDown</kbd> - Undo last swipe</li>
-          <li><kbd className="px-1 bg-white rounded">Numpad 0</kbd> - Next image</li>
-          <li><kbd className="px-1 bg-white rounded">Numpad .</kbd> - Reload page</li>
+          <li>
+            <kbd className="px-1 bg-white rounded">Insert</kbd> - Toggle
+            activation
+          </li>
+          <li>
+            <kbd className="px-1 bg-white rounded">PageDown</kbd> - Undo last
+            swipe
+          </li>
+          <li>
+            <kbd className="px-1 bg-white rounded">Numpad 0</kbd> - Next image
+          </li>
+          <li>
+            <kbd className="px-1 bg-white rounded">Numpad .</kbd> - Reload page
+          </li>
         </ul>
       </div>
     </div>

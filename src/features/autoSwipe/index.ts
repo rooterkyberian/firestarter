@@ -31,7 +31,9 @@ export function swipeRight(): void {
  * Check if profile should be rejected based on settings
  * Returns rejection reason if should reject, null otherwise
  */
-export function shouldReject(settings: FirestarterSettings): RejectionReason | null {
+export function shouldReject(
+  settings: FirestarterSettings
+): RejectionReason | null {
   const profile = analyzeProfile();
 
   // Check distance
@@ -44,8 +46,8 @@ export function shouldReject(settings: FirestarterSettings): RejectionReason | n
 
   // Check interests blacklist
   if (profile.interests.size > 0) {
-    const hasBlacklistedInterest = settings.interestsBlacklist.some((interest) =>
-      profile.interests.has(interest)
+    const hasBlacklistedInterest = settings.interestsBlacklist.some(
+      (interest) => profile.interests.has(interest)
     );
     if (hasBlacklistedInterest) {
       return {

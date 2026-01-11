@@ -7,7 +7,10 @@ import { Storage } from '@shared/storage';
 import { FirestarterSettings } from '@shared/types/settings';
 import { addGlobalStyle } from '@shared/utils/dom';
 import { debounce } from '@shared/utils/helpers';
-import { setupKeyboardShortcuts, expandProfile } from '@features/keyboardShortcuts';
+import {
+  setupKeyboardShortcuts,
+  expandProfile,
+} from '@features/keyboardShortcuts';
 import { autoRejectProfile, formatRejectionReason } from '@features/autoSwipe';
 import { addSocialLinks } from '@features/socialExtractor';
 

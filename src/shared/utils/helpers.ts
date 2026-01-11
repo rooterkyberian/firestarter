@@ -48,9 +48,7 @@ export function debounce<T extends (...args: unknown[]) => void>(
 /**
  * Memoize expensive functions
  */
-export function memoize<T extends (...args: unknown[]) => unknown>(
-  fn: T
-): T {
+export function memoize<T extends (...args: unknown[]) => unknown>(fn: T): T {
   const cache = new Map<string, ReturnType<T>>();
 
   return ((...args: Parameters<T>) => {

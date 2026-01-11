@@ -15,33 +15,16 @@ export const SELECTORS: Record<string, string[]> = {
     '[class*="bio"]',
     '[data-testid="bio"]',
   ],
-  recsPage: [
-    'div.recsPage',
-    '[data-testid="recs-page"]',
-    'main',
-  ],
-  recCard: [
-    '.recCard',
-    '[class*="recCard"]',
-    '[data-testid="rec-card"]',
-  ],
-  reportButton: [
-    'button[aria-label*="Report"]',
-    'button:has-text("REPORT")',
-  ],
+  recsPage: ['div.recsPage', '[data-testid="recs-page"]', 'main'],
+  recCard: ['.recCard', '[class*="recCard"]', '[data-testid="rec-card"]'],
+  reportButton: ['button[aria-label*="Report"]', 'button:has-text("REPORT")'],
   backButton: [
     'button[aria-label="Back"]',
     'button:has-text("Back")',
     'a:has-text("Back")',
   ],
-  rewindButton: [
-    'button[aria-label="Rewind"]',
-    'button:has-text("Rewind")',
-  ],
-  imageButtons: [
-    'button[aria-label*="of"]',
-    'button.bullet',
-  ],
+  rewindButton: ['button[aria-label="Rewind"]', 'button:has-text("Rewind")'],
+  imageButtons: ['button[aria-label*="of"]', 'button.bullet'],
 };
 
 /**
@@ -50,6 +33,7 @@ export const SELECTORS: Record<string, string[]> = {
 export const PATTERNS = {
   distance: /(\d+) kilometers away/,
   heightCm: /\b(\d{3}|\d\.\d\d)(cm)?\b/g,
-  socialMedia: /\b(ig|instagram|inst|insta|instagram\.com|📸|snapchat|s\/c|snap|👻|s\/c👻|fb|facebook|facebook\.com)[:\s@/]*([a-z\d_-]{4,})(\b|👻)/gi,
+  socialMedia:
+    /\b(ig|instagram|inst|insta|instagram\.com|📸|snapchat|s\/c|snap|👻|s\/c👻|fb|facebook|facebook\.com)[:\s@/]*([a-z\d_-]{4,})(\b|👻)/gi,
   vipIndicator: /vip/i,
 } as const;

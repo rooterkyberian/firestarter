@@ -72,9 +72,7 @@ export function nextImage(): void {
 /**
  * Setup keyboard event listeners
  */
-export function setupKeyboardShortcuts(
-  onToggleActivation: () => void
-): void {
+export function setupKeyboardShortcuts(onToggleActivation: () => void): void {
   document.addEventListener('keydown', (e) => {
     switch (e.code) {
       case 'NumpadDecimal':

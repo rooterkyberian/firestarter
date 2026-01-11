@@ -106,7 +106,10 @@ export function findElement(selectors: string[]): Element | null {
 /**
  * Find element using XPath
  */
-export function findByXPath(xpath: string, context: Node = document): HTMLElement | null {
+export function findByXPath(
+  xpath: string,
+  context: Node = document
+): HTMLElement | null {
   const result = document.evaluate(
     xpath,
     context,

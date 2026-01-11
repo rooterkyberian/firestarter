@@ -13,7 +13,9 @@ export class Storage {
   static async getSettings(): Promise<FirestarterSettings> {
     return new Promise((resolve) => {
       chrome.storage.sync.get(this.SETTINGS_KEY, (result) => {
-        const settings = result[this.SETTINGS_KEY] as FirestarterSettings | undefined;
+        const settings = result[this.SETTINGS_KEY] as
+          | FirestarterSettings
+          | undefined;
         resolve(settings || DEFAULT_SETTINGS);
       });
     });
@@ -22,7 +24,9 @@ export class Storage {
   /**
    * Save settings to Chrome storage
    */
-  static async saveSettings(settings: Partial<FirestarterSettings>): Promise<void> {
+  static async saveSettings(
+    settings: Partial<FirestarterSettings>
+  ): Promise<void> {
     const current = await this.getSettings();
     const updated = { ...current, ...settings };
 

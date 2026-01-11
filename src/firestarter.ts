@@ -1,14 +1,14 @@
 declare var GM_config: any, GM_notification: any;
 
-import { knownIntrests } from "./tin";
-import { addGlobalStyle, arrayAsString, press } from "./utils";
+import { knownIntrests } from './tin';
+import { addGlobalStyle, arrayAsString, press } from './utils';
 
 (function () {
   const settings = {
     activated: true,
   };
 
-  const scriptName = "firestarter";
+  const scriptName = 'firestarter';
 
   GM_config.init({
     id: `${scriptName}Config`,
@@ -16,61 +16,61 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
     fields: {
       none: {
         // without this as first item "activated" gets ignored for some reason during save
-        type: "hidden",
+        type: 'hidden',
       },
       activated: {
-        label: "activated",
-        type: "checkbox",
+        label: 'activated',
+        type: 'checkbox',
         default: true,
       },
       autoSwipeLeft: {
-        label: "autoSwipeLeft",
-        type: "checkbox",
+        label: 'autoSwipeLeft',
+        type: 'checkbox',
         default: false,
       },
 
       distanaceLimit: {
-        label: "distanaceLimit",
-        type: "number",
+        label: 'distanaceLimit',
+        type: 'number',
         default: 60,
       },
 
       heightLimit: {
-        label: "heightLimit",
-        type: "number",
+        label: 'heightLimit',
+        type: 'number',
         default: 175,
       },
 
       intrestsBlacklist: {
-        label: "Intrests blacklist",
-        type: "text",
-        title: "comma seperated",
-        default: "Astrology",
+        label: 'Intrests blacklist',
+        type: 'text',
+        title: 'comma seperated',
+        default: 'Astrology',
       },
 
       requiredRegexp: {
         label: "Reject if bio doesn't match regexp",
-        type: "text",
-        title: "regexp",
-        default: "",
+        type: 'text',
+        title: 'regexp',
+        default: '',
       },
     },
 
     events: {
       open: function () {
-        GM_config.get("activated", settings.activated);
+        GM_config.get('activated', settings.activated);
       },
       save: function () {
-        settings.activated = GM_config.get("activated");
+        settings.activated = GM_config.get('activated');
       },
     },
   });
 
   function allProfileImages() {
     const backgroundImageStyles = Array.from(
-      document.querySelectorAll("div.recsPage div")
+      document.querySelectorAll('div.recsPage div')
     )
-      .map((node) => (node as HTMLElement).style["background-image"])
+      .map((node) => (node as HTMLElement).style['background-image'])
       .filter(Boolean);
   }
 
@@ -97,30 +97,34 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
     `);
 
   function revertChoice() {
-    (document
-      .evaluate("//a[contains(., 'Back')]", document)
-      .iterateNext() as HTMLElement).click(); // turn off profile expand to Rewind button comes back up
+    (
+      document
+        .evaluate("//a[contains(., 'Back')]", document)
+        .iterateNext() as HTMLElement
+    ).click(); // turn off profile expand to Rewind button comes back up
     setTimeout(() => {
-      (document
-        .evaluate("//button[contains(., 'Rewind')]", document)
-        .iterateNext() as HTMLElement).click();
+      (
+        document
+          .evaluate("//button[contains(., 'Rewind')]", document)
+          .iterateNext() as HTMLElement
+      ).click();
     }, 50);
   }
 
   function expandProfile() {
     press({
       keyCode: 38,
-      key: "ArrowUp",
-      code: "ArrowUp",
+      key: 'ArrowUp',
+      code: 'ArrowUp',
     });
-    const e = document.getElementsByClassName("recCard");
+    const e = document.getElementsByClassName('recCard');
     if (e && e.length) {
       (e[0] as HTMLElement).click();
     }
   }
 
   function swipeLeft() {
-    press({ key: "ArrowLeft", code: "ArrowLeft", keyCode: 37 });
+    press({ key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 });
   }
 
   function getDistance(): number {
@@ -134,16 +138,16 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
 
   function getBio(): string | null {
     const bioDiv = document.querySelector(
-      "hr:first-of-type + div"
+      'hr:first-of-type + div'
     ) as HTMLElement;
     if (!bioDiv) return null;
     return bioDiv.innerText;
   }
 
   function getReportButton() {
-    const reportBtns = Array.from(
-      document.querySelectorAll("button")
-    ).filter((btn) => btn.innerText.startsWith("REPORT "));
+    const reportBtns = Array.from(document.querySelectorAll('button')).filter(
+      (btn) => btn.innerText.startsWith('REPORT ')
+    );
     return reportBtns.length ? reportBtns[0] : null;
   }
 
@@ -162,9 +166,9 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
 
   function bioGetSocial(bio: string) {
     const social = {
-      instagram: ["ig", "instagram", "inst", "insta", "instagram.com", "📸"],
-      snapchat: ["snapchat", "s/c", "snap", "👻", "s/c👻"],
-      facebook: ["fb", "facebook", "facebook.com"],
+      instagram: ['ig', 'instagram', 'inst', 'insta', 'instagram.com', '📸'],
+      snapchat: ['snapchat', 's/c', 'snap', '👻', 's/c👻'],
+      facebook: ['fb', 'facebook', 'facebook.com'],
     };
     const revertSocialMap = {};
     for (const [socialNetworkName, aliases] of Object.entries(social)) {
@@ -174,8 +178,8 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
     }
     const allSocialNames = [].concat.apply([], Object.values(social));
     const re = RegExp(
-      `\\b(${allSocialNames.join("|")})[:\\s@/]*([a-z\\d_-]{4,})(\\b|👻)`,
-      "gi"
+      `\\b(${allSocialNames.join('|')})[:\\s@/]*([a-z\\d_-]{4,})(\\b|👻)`,
+      'gi'
     );
     const foundSocialArr = Array.from(bio.matchAll(re)).map((m) => [
       revertSocialMap[m[1].toLowerCase()],
@@ -191,10 +195,10 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
     return nodes;
   }
 
-  function getOrAddChildNode(parent, id, tag = "div") {
+  function getOrAddChildNode(parent, id, tag = 'div') {
     let node = document.getElementById(id);
     if (!node) {
-      node = document.createElement("div");
+      node = document.createElement('div');
       node.id = id;
       parent.appendChild(node);
     }
@@ -203,19 +207,19 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
   }
 
   function createLink(text, href) {
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     const linkText = document.createTextNode(text);
     a.appendChild(linkText);
     a.href = href;
-    a.target = "_blank";
+    a.target = '_blank';
     return a;
   }
 
   function getIntrests() {
-    const separator = "\uFFFF";
+    const separator = '\uFFFF';
 
     const concatedList = knownIntrests.join(separator) + separator;
-    const profileCard = document.querySelector(".profileCard__card");
+    const profileCard = document.querySelector('.profileCard__card');
     if (!profileCard) return null;
     let intrestsParentNode;
     {
@@ -233,38 +237,38 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
     if (!intrestsParentNode) return new Set();
     let intrests = new Set(
       xpathResultsToArray(
-        document.evaluate(".//text()", intrestsParentNode)
+        document.evaluate('.//text()', intrestsParentNode)
       ).map((textNode) => textNode.textContent)
     );
     return intrests;
   }
 
   function startup() {
-    let workmodeBtn = document.getElementsByClassName("workmodeBtn")[0];
+    let workmodeBtn = document.getElementsByClassName('workmodeBtn')[0];
     if (workmodeBtn) {
       workmodeBtn.addEventListener(
-        "click",
+        'click',
         (event) => {
           GM_config.open();
           event.stopPropagation(); // stop "Work mode" activation
         },
         true
       );
-      console.log("Workmode overriden");
+      console.log('Workmode overriden');
     }
 
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener('keydown', (e) => {
       switch (e.code) {
-        case "NumpadDecimal":
+        case 'NumpadDecimal':
           location.reload();
           break;
-        case "Numpad0":
+        case 'Numpad0':
           nextImg();
           break;
-        case "PageDown":
+        case 'PageDown':
           revertChoice();
           break;
-        case "Insert":
+        case 'Insert':
           settings.activated = !settings.activated;
 
           GM_notification({
@@ -273,7 +277,7 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
           });
           break;
         default:
-          console.log("keydown", e);
+          console.log('keydown', e);
       }
     });
   }
@@ -288,18 +292,18 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
     expandProfile();
 
     function rejectNrefresh(...args: any[]) {
-      if (GM_config.get("autoSwipeLeft")) {
-        console.log("Swiped left due", ...args);
+      if (GM_config.get('autoSwipeLeft')) {
+        console.log('Swiped left due', ...args);
 
         GM_notification({
-          text: "Swiped left due " + arrayAsString(Array.from(arguments)),
+          text: 'Swiped left due ' + arrayAsString(Array.from(arguments)),
           title: scriptName,
         });
         swipeLeft();
         setTimeout(recViewChanged, 250);
       } else {
         console.log(
-          "autoSwipeLeft disabled; would have swiped left due",
+          'autoSwipeLeft disabled; would have swiped left due',
           ...args
         );
       }
@@ -307,44 +311,44 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
 
     const distance = getDistance();
     if (distance) {
-      console.log("Distance:", distance);
+      console.log('Distance:', distance);
     }
-    if (distance && distance > GM_config.get("distanaceLimit")) {
-      rejectNrefresh("distance:", distance);
+    if (distance && distance > GM_config.get('distanaceLimit')) {
+      rejectNrefresh('distance:', distance);
     }
     const intrests = getIntrests();
     if (intrests && intrests.size > 0) {
       console.log(intrests);
-      const blacklistedIntrests = GM_config.get("intrestsBlacklist")
-        .split(",")
+      const blacklistedIntrests = GM_config.get('intrestsBlacklist')
+        .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
       if (blacklistedIntrests.some((e) => intrests.has(e))) {
-        rejectNrefresh("intrests:", intrests);
+        rejectNrefresh('intrests:', intrests);
       }
     }
     const bio = getBio();
     if (bio) {
-      console.log("Bio:", bio);
+      console.log('Bio:', bio);
       const height = bioExtractHeight(bio);
-      if (height && height > GM_config.get("heightLimit")) {
-        rejectNrefresh("height:", height);
+      if (height && height > GM_config.get('heightLimit')) {
+        rejectNrefresh('height:', height);
       }
       const social = bioGetSocial(bio);
       if (Object.keys(social).length) {
-        console.log("social", social);
+        console.log('social', social);
       }
       for (const [socialNetworkName, name] of Object.entries(social) as Array<
         [string, string]
       >) {
-        if (name.includes("vip")) {
+        if (name.includes('vip')) {
           rejectNrefresh(`social[${socialNetworkName}]:`, name);
         }
       }
 
       {
-        const requiredRegexp = (GM_config.get("requiredRegexp") || "").trim();
-        if (requiredRegexp && !bio.match(RegExp(requiredRegexp, "i"))) {
+        const requiredRegexp = (GM_config.get('requiredRegexp') || '').trim();
+        if (requiredRegexp && !bio.match(RegExp(requiredRegexp, 'i'))) {
           rejectNrefresh(`bio did not match regexp`);
         }
       }
@@ -355,13 +359,13 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
         if (reportBtn) {
           socialLinksDiv = getOrAddChildNode(
             reportBtn.parentNode,
-            "socialLinks"
+            'socialLinks'
           );
         }
       }
       if (socialLinksDiv) {
-        socialLinksDiv.innerHTML = "";
-        const instagramName = social["instagram"];
+        socialLinksDiv.innerHTML = '';
+        const instagramName = social['instagram'];
         if (instagramName) {
           socialLinksDiv.appendChild(
             createLink(
@@ -381,7 +385,7 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
   let debounceTimeout = null;
   const mutationCallback = function (mutationsList, observer) {
     for (let mutation of mutationsList) {
-      if (mutation.type === "childList" && mutation.addedNodes.length) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length) {
         if (settings.activated) {
           if (debounceTimeout) {
             clearTimeout(debounceTimeout);
@@ -403,7 +407,7 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
 
   function nextImg() {
     let imgBtns = Array.from(
-      document.querySelector(".profileCard__card").querySelectorAll("button")
+      document.querySelector('.profileCard__card').querySelectorAll('button')
     );
     imgBtns = imgBtns.filter((imgBtn) => imgBtn.textContent.match(/([\d]\/)+/));
     if (!imgBtns.length) {
@@ -418,7 +422,7 @@ import { addGlobalStyle, arrayAsString, press } from "./utils";
         imgBtn.click();
         break;
       }
-      previousWasActive = imgBtn.classList.contains("bullet--active");
+      previousWasActive = imgBtn.classList.contains('bullet--active');
     }
   }
 })();
