@@ -8,7 +8,8 @@
     "dev": "vite build --watch --mode development",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext ts,tsx",
+    "lint": "eslint src --ext ts,tsx --max-warnings 50",
+    "lint:fix": "eslint src --ext ts,tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
     "type-check": "tsc --noEmit",
     "package": "npm run build && node scripts/package-extension.js"
@@ -19,6 +20,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@types/chrome": "^0.0.278",
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
