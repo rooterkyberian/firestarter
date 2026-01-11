@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Firestarter - Enhanced Tinder Experience",
+  "version": "2.0.0",
+  "description": "Improved Tinder UI with keyboard shortcuts, auto-filtering, and enhanced profile information",
+  "author": "RooTer",
+  "permissions": [
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://tinder.com/*",
+    "https://*.tinder.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://tinder.com/*", "https://*.tinder.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png"],
+      "matches": ["https://tinder.com/*"]
+    }
+  ]
+}
