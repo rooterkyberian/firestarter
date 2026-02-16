@@ -88,7 +88,7 @@ This will automatically:
 **Dependency Groups:**
 1. **TypeScript**: TypeScript, @typescript-eslint/*, @types/*
 2. **React**: React, react-dom, @types/react*
-3. **Build Tools**: Vite, Webpack, Rollup, esbuild
+3. **Build Tools**: Vite, Rollup, esbuild
 4. **Code Quality**: ESLint, Prettier, @eslint/*
 
 **Benefits:**
@@ -171,7 +171,6 @@ Comprehensive guide including:
 **Ignored Files:**
 - Build outputs (`dist/`, `build/`)
 - Config files
-- Legacy UserScript files (`firestarter.ts`, `utils.ts`, `tin.ts`)
 
 **Rules:**
 - TypeScript `any` type: Warning (not error)

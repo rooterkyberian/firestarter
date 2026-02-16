@@ -39,8 +39,6 @@ A powerful browser extension that enhances your Tinder experience with automatio
 
 ## 🚀 Installation
 
-### Option 1: From Source (Current - Browser Extension)
-
 1. **Clone and build**
    ```bash
    git clone https://github.com/rooterkyberian/firestarter.git
@@ -55,13 +53,6 @@ A powerful browser extension that enhances your Tinder experience with automatio
    - Click "Load unpacked"
    - Select the `dist` folder
 
-### Option 2: Legacy UserScript (Old Method)
-
-1. Install [Tampermonkey](https://www.tampermonkey.net/)
-2. Install [firestarter.user.js](https://github.com/rooterkyberian/firestarter/raw/main/build/firestarter.user.js)
-
-**Note**: The userscript version is deprecated. The browser extension offers better performance, security, and features.
-
 ## 🔧 Configuration
 
 Click the extension icon to open the settings panel where you can configure:
@@ -75,18 +66,12 @@ Click the extension icon to open the settings panel where you can configure:
 
 ## 🛠️ Tech Stack
 
-### Version 2.0 (Browser Extension)
 - **TypeScript 5.7** - Type-safe development
 - **React 18** - Modern UI framework
 - **Zustand** - Lightweight state management
 - **Tailwind CSS** - Utility-first styling
 - **Vite 6** - Lightning-fast build tool
 - **Chrome Extension Manifest V3** - Latest extension platform
-
-### Version 1.0 (UserScript - Deprecated)
-- TypeScript 3.9
-- Webpack 4
-- Tampermonkey/Greasemonkey
 
 ## 📁 Project Structure
 

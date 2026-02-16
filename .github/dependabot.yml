@@ -32,7 +32,6 @@ updates:
       build-tools:
         patterns:
           - "vite*"
-          - "webpack*"
           - "rollup*"
           - "esbuild"
       # Group linting/formatting tools

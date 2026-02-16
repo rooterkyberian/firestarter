@@ -13,10 +13,6 @@ export default [
       '*.config.js',
       '*.config.ts',
       'vite.config.ts',
-      // Old UserScript files (deprecated, keeping for reference)
-      'src/firestarter.ts',
-      'src/utils.ts',
-      'src/tin.ts',
     ],
   },
 
