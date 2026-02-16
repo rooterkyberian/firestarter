@@ -1,7 +1,51 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { readdirSync, renameSync, readFileSync, writeFileSync } from 'fs';
 import webExtension from 'vite-plugin-web-extension';
+
+/**
+ * vite-plugin-web-extension emits files with colons in the name (e.g. virtual:temp.js.js).
+ * Colons are invalid on Windows/NTFS and rejected by actions/upload-artifact.
+ * This plugin renames those files post-build and updates all references.
+ */
+function sanitizeOutputFileNames(outDir: string): Plugin {
+  return {
+    name: 'sanitize-output-filenames',
+    closeBundle() {
+      const dir = resolve(__dirname, outDir);
+      const renames = new Map<string, string>();
+
+      for (const file of readdirSync(dir)) {
+        if (file.includes(':')) {
+          const sanitized = file.replace(/:/g, '_');
+          renameSync(resolve(dir, file), resolve(dir, sanitized));
+          renames.set(file, sanitized);
+        }
+      }
+
+      if (renames.size === 0) return;
+
+      // Update references in HTML and other text files
+      const textFiles = readdirSync(dir, { recursive: true }) as string[];
+      for (const rel of textFiles) {
+        const full = resolve(dir, rel);
+        try {
+          const content = readFileSync(full, 'utf-8');
+          let updated = content;
+          for (const [old, sanitized] of renames) {
+            updated = updated.replaceAll(old, sanitized);
+          }
+          if (updated !== content) {
+            writeFileSync(full, updated);
+          }
+        } catch {
+          // skip binary files / directories
+        }
+      }
+    },
+  };
+}
 
 export default defineConfig({
   test: {
@@ -54,6 +98,7 @@ export default defineConfig({
         ],
       }),
     }),
+    sanitizeOutputFileNames('dist'),
   ],
   resolve: {
     alias: {
