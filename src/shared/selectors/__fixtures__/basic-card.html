@@ -1,0 +1,15 @@
+<!--
+  Minimal anonymized profile card: photo + aria-label only.
+  No bio / interests / distance / report button — used to assert that those
+  selectors fail gracefully while the card-level ones still resolve.
+-->
+<div class="recCard">
+  <div class="profileCard__card">
+    <div
+      class="photo"
+      aria-label="Profile photo 1 of 3"
+      style="background-image: url('https://images.example.invalid/u000/photo1.jpg');"
+    ></div>
+    <div class="name">Test Name, 27</div>
+  </div>
+</div>

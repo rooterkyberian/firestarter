@@ -25,6 +25,7 @@ A powerful browser extension that enhances your Tinder experience with automatio
 - `PageDown` - Undo last swipe (Rewind)
 - `Numpad 0` - Navigate to next profile image
 - `Numpad .` - Reload page
+- `Alt+Shift+C` - Capture the current card as an anonymized selector fixture (dev)
 
 ### 📊 Profile Enhancements
 - **Auto-expand profiles**: Automatically expands profiles for full information view
@@ -108,9 +109,12 @@ firestarter/
 > **Icons** are generated at build time from a single SVG in
 > `scripts/generate-icons.js` — the PNGs under `public/icons/` are gitignored.
 
-> **Tinder selectors** are inherently fragile. Before relying on a build, walk
-> through [`docs/SELECTOR_VERIFICATION.md`](docs/SELECTOR_VERIFICATION.md) against
-> the live site.
+> **Tinder selectors** are inherently fragile. They're modeled as a named,
+> instrumented registry (`src/shared/selectors/registry.ts`) and covered by
+> jsdom fixture tests. Press `Alt+Shift+C` on a live card to record an
+> anonymized fixture + a report of which selectors failed, then export it from
+> the popup's Developer section. See
+> [`docs/SELECTOR_VERIFICATION.md`](docs/SELECTOR_VERIFICATION.md).
 
 ## ⚙️ CI/CD
 

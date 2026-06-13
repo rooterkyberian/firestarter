@@ -88,18 +88,21 @@ export function xpathResultsToArray(xpathResult: XPathResult): Node[] {
 }
 
 /**
- * Find element with fallback selectors.
- * Returns the first match, or null if none match. Stays quiet on the common
+ * Try a list of fallback selectors and return both the matched element and the
+ * selector that matched (useful for instrumentation). Stays quiet on the common
  * "no match yet" case (Tinder's DOM mutates constantly); only an actually
  * invalid selector earns a one-time warning.
  */
 const warnedSelectors = new Set<string>();
 
-export function findElement(selectors: string[]): Element | null {
+export function queryFirst(
+  selectors: string[],
+  root: ParentNode = document
+): { element: Element; selector: string } | null {
   for (const selector of selectors) {
     try {
-      const el = document.querySelector(selector);
-      if (el) return el;
+      const element = root.querySelector(selector);
+      if (element) return { element, selector };
     } catch {
       if (!warnedSelectors.has(selector)) {
         warnedSelectors.add(selector);
@@ -108,6 +111,16 @@ export function findElement(selectors: string[]): Element | null {
     }
   }
   return null;
+}
+
+/**
+ * Find element with fallback selectors. Returns the first match, or null.
+ */
+export function findElement(
+  selectors: string[],
+  root: ParentNode = document
+): Element | null {
+  return queryFirst(selectors, root)?.element ?? null;
 }
 
 /**

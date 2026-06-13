@@ -52,18 +52,42 @@ logged-in Tinder session) — it's a manual smoke test.
 - [ ] **Keyboard: `PageDown`** — rewinds the last swipe (Back → Rewind).
 - [ ] **Keyboard: `Numpad 0`** — advances to the next profile photo.
 - [ ] **Keyboard: `Numpad .`** — reloads the page.
+- [ ] **Keyboard: `Alt+Shift+C`** — captures the current card (see below).
 
-## TODO: fixture-based test harness
+## Selector instrumentation
 
-Manual verification is the only correctness signal today. To make selectors
-regression-testable without a live login:
+Every brittle DOM lookup is a named entry in
+`src/shared/selectors/registry.ts`. `analyzeProfileWithReport()`
+(`src/features/profileAnalyzer/`) runs the analysis while recording which named
+selectors resolved, returning a `SelectorReport` whose `failed: string[]` is the
+actionable "what broke" list. This is what the recorder stores per capture.
 
-1. Capture sanitised Tinder card HTML (scrub PII) into
-   `src/**/__fixtures__/*.html` for: a basic card, a card with bio + height, a
-   card with interests, and a card with social handles.
-2. Add jsdom unit tests (Vitest) that load each fixture into `document.body` and
-   assert `getBio`, `getDistance`, `bioExtractHeight`, `getInterests`,
-   `getProfileFingerprint`, and `getReportButton` behave as expected.
-3. Run these in CI so selector drift fails the build with a clear message, even
-   though the live behaviour still needs the manual pass above after Tinder
-   redesigns.
+## Recording fixtures from live Tinder
+
+You can harvest real (anonymized) cards instead of hand-writing fixtures:
+
+1. Load the extension and open `tinder.com/app/recs`.
+2. On a card, press **Alt+Shift+C**. The card is analyzed, **anonymized**
+   (photo URLs, names, age, bio prose and social handles are replaced with
+   synthetic same-shape tokens), and stored in `chrome.storage.local` along with
+   its `SelectorReport`. A notification confirms the save.
+3. Open the popup → **Developer** → **Export captures** to download a JSON
+   bundle. Each entry has `html` (anonymized, fixture-ready), `report`
+   (`failed` selectors), and non-PII `extracted` flags.
+4. Inspect `report.failed` to see which selectors broke on the live page.
+
+## Fixture-based regression tests
+
+Implemented in `src/shared/selectors/registry.test.ts` against
+`src/shared/selectors/__fixtures__/*.html` (basic, bio+height+distance+interests,
+social, and a `changed-dom` redesign that must fail gracefully). To add a new
+regression case: take the `html` of an exported capture, save it under
+`__fixtures__/`, load it into `document.body.innerHTML`, run
+`analyzeProfileWithReport()`, and assert the extracted data and report. These run
+in CI (`npm test`) so selector drift fails the build — though a live pass through
+the checklist above is still required after a Tinder redesign.
+
+### TODO
+
+- A one-click "Export as fixture" in the popup that writes a ready-to-commit
+  `.html` file (today you copy the `html` field out of the JSON bundle).

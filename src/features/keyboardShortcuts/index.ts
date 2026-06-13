@@ -3,7 +3,8 @@
  * Provides keyboard navigation and controls for Tinder
  */
 
-import { press, findByXPath } from '@shared/utils/dom';
+import { press } from '@shared/utils/dom';
+import { resolve } from '@shared/selectors/registry';
 
 /**
  * Expand profile view
@@ -26,13 +27,13 @@ export function expandProfile(): void {
  */
 export function revertChoice(): void {
   // Find and click "Back" button
-  const backButton = findByXPath("//a[contains(., 'Back')]");
+  const backButton = resolve('backLink') as HTMLElement | null;
   if (backButton) {
     backButton.click();
 
     // After closing profile, click Rewind button
     setTimeout(() => {
-      const rewindButton = findByXPath("//button[contains(., 'Rewind')]");
+      const rewindButton = resolve('rewindButton') as HTMLElement | null;
       if (rewindButton) {
         rewindButton.click();
       }
@@ -44,7 +45,7 @@ export function revertChoice(): void {
  * Navigate to next image in profile
  */
 export function nextImage(): void {
-  const profileCard = document.querySelector('.profileCard__card');
+  const profileCard = resolve('profileCard');
   if (!profileCard) return;
 
   let imgBtns = Array.from(profileCard.querySelectorAll('button')).filter(
@@ -71,8 +72,18 @@ export function nextImage(): void {
 /**
  * Setup keyboard event listeners
  */
-export function setupKeyboardShortcuts(onToggleActivation: () => void): void {
+export function setupKeyboardShortcuts(
+  onToggleActivation: () => void,
+  onCapture?: () => void
+): void {
   document.addEventListener('keydown', (e) => {
+    // Alt+Shift+C — capture the current card (modified key avoids accidents).
+    if (onCapture && e.altKey && e.shiftKey && e.code === 'KeyC') {
+      e.preventDefault();
+      onCapture();
+      return;
+    }
+
     switch (e.code) {
       case 'NumpadDecimal':
         // Reload page

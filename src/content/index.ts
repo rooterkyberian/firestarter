@@ -13,7 +13,29 @@ import {
 } from '@features/keyboardShortcuts';
 import { autoRejectProfile, formatRejectionReason } from '@features/autoSwipe';
 import { addSocialLinks } from '@features/socialExtractor';
-import { analyzeProfile, getProfileFingerprint } from '@features/profileAnalyzer';
+import {
+  analyzeProfile,
+  getProfileFingerprint,
+} from '@features/profileAnalyzer';
+import { captureCurrentCard } from '@features/recorder';
+
+/** Show a transient notification via the background service worker. */
+function notify(message: string): void {
+  chrome.runtime.sendMessage({
+    type: 'SHOW_NOTIFICATION',
+    payload: { title: 'Firestarter', message },
+  });
+}
+
+/** Capture the current card (Alt+Shift+C) and report the result. */
+async function handleCapture(): Promise<void> {
+  const result = await captureCurrentCard();
+  notify(
+    result.ok
+      ? `Captured card — ${result.count} saved`
+      : `Capture failed: ${result.reason}`
+  );
+}
 
 /**
  * Settings are loaded once and kept in sync via Storage.onSettingsChanged, so
@@ -201,7 +223,7 @@ async function initialize(): Promise<void> {
   setupStyles();
 
   // Setup keyboard shortcuts
-  setupKeyboardShortcuts(toggleActivation);
+  setupKeyboardShortcuts(toggleActivation, handleCapture);
 
   // Wait a bit for Tinder to load
   setTimeout(() => {

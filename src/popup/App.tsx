@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '@shared/config/store';
+import { CaptureStore } from '@shared/storage/captureStore';
 
 export function App() {
   const settings = useSettingsStore();
@@ -7,6 +8,29 @@ export function App() {
   // effect runs exactly once without depending on the whole settings object.
   const loadSettings = useSettingsStore((state) => state.loadSettings);
   const [interestsInput, setInterestsInput] = useState('');
+  const [captureCount, setCaptureCount] = useState(0);
+
+  useEffect(() => {
+    CaptureStore.count().then(setCaptureCount);
+  }, []);
+
+  const handleExportCaptures = async () => {
+    const captures = await CaptureStore.getAll();
+    const blob = new Blob([JSON.stringify(captures, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `firestarter-captures-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleClearCaptures = async () => {
+    await CaptureStore.clear();
+    setCaptureCount(0);
+  };
 
   useEffect(() => {
     // Load settings when popup opens
@@ -190,7 +214,40 @@ export function App() {
           <li>
             <kbd className="px-1 bg-white rounded">Numpad .</kbd> - Reload page
           </li>
+          <li>
+            <kbd className="px-1 bg-white rounded">Alt+Shift+C</kbd> - Capture
+            current card (dev)
+          </li>
         </ul>
+      </div>
+
+      {/* Developer: selector captures */}
+      <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+        <h3 className="text-sm font-semibold text-amber-900 mb-1">
+          🛠️ Developer
+        </h3>
+        <p className="text-xs text-amber-800 mb-3">
+          {captureCount} anonymized card capture
+          {captureCount === 1 ? '' : 's'} stored. Press{' '}
+          <kbd className="px-1 bg-white rounded">Alt+Shift+C</kbd> on Tinder to
+          record one.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCaptures}
+            disabled={captureCount === 0}
+            className="flex-1 py-2 px-3 text-xs font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Export captures
+          </button>
+          <button
+            onClick={handleClearCaptures}
+            disabled={captureCount === 0}
+            className="flex-1 py-2 px-3 text-xs font-medium rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Clear
+          </button>
+        </div>
       </div>
     </div>
   );

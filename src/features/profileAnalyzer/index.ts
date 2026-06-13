@@ -5,6 +5,14 @@
 
 import { PATTERNS, SELECTORS } from '@shared/utils/selectors';
 import { findElement, xpathResultsToArray } from '@shared/utils/dom';
+import {
+  resolve,
+  recordOutcome,
+  startReport,
+  endReport,
+  SELECTOR_NAMES,
+  SelectorReport,
+} from '@shared/selectors/registry';
 import { knownInterests } from './knownInterests';
 import { ProfileData, SocialMedia } from '@shared/types/settings';
 
@@ -17,19 +25,17 @@ import { ProfileData, SocialMedia } from '@shared/types/settings';
  * when no card is found, in which case callers fall back to throttling.
  */
 export function getProfileFingerprint(): string | null {
-  const card = findElement(SELECTORS.profileCard);
+  const card = resolve('profileCard');
   if (!card) return null;
 
-  const photo = card.querySelector(
-    '[style*="background-image"]'
-  ) as HTMLElement | null;
+  const photo = resolve('cardPhoto', card) as HTMLElement | null;
   const bg = photo?.style.backgroundImage;
   if (bg && bg !== 'none') {
     const match = bg.match(/url\(["']?(.*?)["']?\)/);
     if (match?.[1]) return match[1];
   }
 
-  const labelled = card.querySelector('[aria-label]');
+  const labelled = resolve('cardAriaLabel', card);
   const label = labelled?.getAttribute('aria-label');
   if (label) return label;
 
@@ -37,23 +43,35 @@ export function getProfileFingerprint(): string | null {
 }
 
 /**
- * Get distance from profile
+ * Get distance from profile. Searches the profile card first (bounding the
+ * region), then falls back to the whole document body.
  */
 export function getDistance(): number | null {
-  const match = document.body.innerHTML.match(PATTERNS.distance);
-  if (!match) {
-    return null;
+  const card = findElement(SELECTORS.profileCard);
+  const sources = [card?.textContent, document.body.textContent];
+
+  for (const source of sources) {
+    if (!source) continue;
+    const match = source.match(PATTERNS.distance);
+    if (match) {
+      recordOutcome('distanceText', true);
+      return Number(match[1]);
+    }
   }
-  return Number(match[1]);
+
+  recordOutcome('distanceText', false);
+  return null;
 }
 
 /**
  * Get bio text from profile
  */
 export function getBio(): string | null {
-  const bioDiv = findElement(SELECTORS.bioSection) as HTMLElement;
+  const bioDiv = resolve('bioSection') as HTMLElement | null;
   if (!bioDiv) return null;
-  return bioDiv.innerText;
+  // innerText is preferred (respects rendering) but is undefined outside a real
+  // browser; fall back to textContent so this works under jsdom too.
+  return bioDiv.innerText || bioDiv.textContent || null;
 }
 
 /**
@@ -112,8 +130,11 @@ export function getInterests(): Set<string> {
   const separator = '\uFFFF';
   const concatedList = knownInterests.join(separator) + separator;
 
-  const profileCard = findElement(SELECTORS.profileCard);
-  if (!profileCard) return new Set();
+  const profileCard = resolve('profileCard');
+  if (!profileCard) {
+    recordOutcome('interestsContainer', false);
+    return new Set();
+  }
 
   const xpath = `.//*[text() and contains("${concatedList}", concat(text(), "${separator}"))]/..`;
   const xpathResult = document.evaluate(
@@ -127,11 +148,24 @@ export function getInterests(): Set<string> {
     xpathResult.snapshotLength - 1
   );
 
-  if (!interestsParentNode) return new Set();
+  if (!interestsParentNode) {
+    recordOutcome('interestsContainer', false);
+    return new Set();
+  }
+
+  recordOutcome('interestsContainer', true);
 
   const interests = new Set(
     xpathResultsToArray(
-      document.evaluate('.//text()', interestsParentNode)
+      // Explicit result type: browsers default to ANY_TYPE, but jsdom requires
+      // it. ORDERED_NODE_ITERATOR_TYPE works with iterateNext in both.
+      document.evaluate(
+        './/text()',
+        interestsParentNode,
+        null,
+        XPathResult.ORDERED_NODE_ITERATOR_TYPE,
+        null
+      )
     ).map((textNode) => textNode.textContent || '')
   );
 
@@ -142,10 +176,7 @@ export function getInterests(): Set<string> {
  * Get report button element
  */
 export function getReportButton(): HTMLButtonElement | null {
-  const reportBtns = Array.from(document.querySelectorAll('button')).filter(
-    (btn) => btn.innerText.startsWith('REPORT ')
-  );
-  return reportBtns.length > 0 && reportBtns[0] ? reportBtns[0] : null;
+  return resolve('reportButton') as HTMLButtonElement | null;
 }
 
 /**
@@ -171,4 +202,28 @@ export function analyzeProfile(): ProfileData {
     interests,
     socialMedia,
   };
+}
+
+/**
+ * Analyze the profile while recording which named selectors resolved.
+ *
+ * Runs the normal analysis (which records bioSection, profileCard,
+ * interestsContainer, distanceText) and additionally probes the remaining
+ * locators (fingerprint photo/aria-label, report/back/rewind buttons, image
+ * bullets) so the report covers every selector the extension depends on.
+ */
+export function analyzeProfileWithReport(): {
+  data: ProfileData;
+  report: SelectorReport;
+} {
+  startReport();
+  const data = analyzeProfile();
+
+  // Probe locators not exercised by analyzeProfile so the report is complete.
+  getProfileFingerprint(); // records profileCard, cardPhoto, cardAriaLabel
+  for (const name of SELECTOR_NAMES) {
+    resolve(name); // de-duped; fills in reportButton/backLink/rewindButton/imageBullets
+  }
+
+  return { data, report: endReport() };
 }
