@@ -9,6 +9,34 @@ import { knownInterests } from './knownInterests';
 import { ProfileData, SocialMedia } from '@shared/types/settings';
 
 /**
+ * Compute a lightweight fingerprint identifying the currently-shown card.
+ * Used to avoid re-processing (and looping on) the same profile.
+ *
+ * Prefers the first photo URL, which is stable whether the card is collapsed
+ * or expanded; falls back to an aria-label (usually "Name, age"). Returns null
+ * when no card is found, in which case callers fall back to throttling.
+ */
+export function getProfileFingerprint(): string | null {
+  const card = findElement(SELECTORS.profileCard);
+  if (!card) return null;
+
+  const photo = card.querySelector(
+    '[style*="background-image"]'
+  ) as HTMLElement | null;
+  const bg = photo?.style.backgroundImage;
+  if (bg && bg !== 'none') {
+    const match = bg.match(/url\(["']?(.*?)["']?\)/);
+    if (match?.[1]) return match[1];
+  }
+
+  const labelled = card.querySelector('[aria-label]');
+  const label = labelled?.getAttribute('aria-label');
+  if (label) return label;
+
+  return null;
+}
+
+/**
  * Get distance from profile
  */
 export function getDistance(): number | null {

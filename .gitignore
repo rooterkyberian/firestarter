@@ -7,6 +7,9 @@ dist/
 build/
 *.user.js
 
+# Generated extension icons (produced by scripts/generate-icons.js at build time)
+public/icons/*.png
+
 # Extension package
 *.zip
 *.crx

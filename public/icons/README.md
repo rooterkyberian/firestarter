@@ -1,15 +1,11 @@
 # Extension Icons
 
-Place your extension icons here:
+These icons are **generated at build time** — they are not committed to the repo.
 
-- icon16.png (16x16)
-- icon32.png (32x32)
-- icon48.png (48x48)
-- icon128.png (128x128)
+`scripts/generate-icons.js` rasterizes a single inline flame-themed SVG into
+`icon16.png`, `icon32.png`, `icon48.png`, and `icon128.png` using `sharp`.
 
-For now, you can create placeholder icons or use a tool like:
-- https://www.iconfinder.com/
-- https://www.flaticon.com/
-- Create your own with design tools
+- Runs automatically via the `prebuild` npm script before every `npm run build`.
+- Run manually with `npm run generate-icons`.
 
-The icons should represent a flame/fire theme for "Firestarter".
+To change the artwork, edit the `SVG` constant in `scripts/generate-icons.js`.

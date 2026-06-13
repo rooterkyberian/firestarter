@@ -45,11 +45,4 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
   return false;
 });
 
-/**
- * Handle browser action click (extension icon)
- */
-chrome.action.onClicked.addListener(() => {
-  console.log('Extension icon clicked');
-});
-
 console.log('Firestarter: Background service worker loaded');

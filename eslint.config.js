@@ -73,7 +73,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        { argsIgnorePattern: '^_' },
+        { argsIgnorePattern: '^_', ignoreRestSiblings: true },
       ],
       'no-console': 'off',
       'no-undef': 'off', // TypeScript handles this

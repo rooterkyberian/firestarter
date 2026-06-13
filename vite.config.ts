@@ -8,6 +8,10 @@ import webExtension from 'vite-plugin-web-extension';
  * vite-plugin-web-extension emits files with colons in the name (e.g. virtual:temp.js.js).
  * Colons are invalid on Windows/NTFS and rejected by actions/upload-artifact.
  * This plugin renames those files post-build and updates all references.
+ *
+ * TODO: this is a workaround for the bundler emitting `virtual:` module ids
+ * verbatim. Re-check on each vite-plugin-web-extension bump — if upstream stops
+ * emitting colon-named chunks, this whole plugin can be deleted.
  */
 function sanitizeOutputFileNames(outDir: string): Plugin {
   return {
@@ -48,10 +52,8 @@ function sanitizeOutputFileNames(outDir: string): Plugin {
 }
 
 export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}'],
-  },
+  // Test config lives in vitest.config.ts so tests don't load the extension
+  // build plugins (which crash on teardown outside of `vite build`).
   plugins: [
     react(),
     webExtension({

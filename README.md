@@ -97,11 +97,31 @@ firestarter/
 ## 📜 Development Scripts
 
 - `npm run dev` - Development build with watch mode
-- `npm run build` - Production build
-- `npm run lint` - Lint code with ESLint
+- `npm run build` - Production build (runs `generate-icons` first via `prebuild`)
+- `npm run generate-icons` - Regenerate the PNG icons from the inline SVG source
+- `npm run test` - Run the unit tests (Vitest)
+- `npm run lint` - Lint code with ESLint (zero warnings allowed)
 - `npm run format` - Format code with Prettier
 - `npm run type-check` - Check TypeScript types
 - `npm run package` - Build and package extension as ZIP
+
+> **Icons** are generated at build time from a single SVG in
+> `scripts/generate-icons.js` — the PNGs under `public/icons/` are gitignored.
+
+> **Tinder selectors** are inherently fragile. Before relying on a build, walk
+> through [`docs/SELECTOR_VERIFICATION.md`](docs/SELECTOR_VERIFICATION.md) against
+> the live site.
+
+## ⚙️ CI/CD
+
+GitHub Actions (`.github/workflows/`):
+
+- **ci.yml** — on every push/PR: format check, lint, tests, type-check, build,
+  and uploads `dist/` as an artifact. Pushes to `main` also produce a packaged
+  zip.
+- **release.yml** — on a `v*.*.*` tag: builds, zips, and creates a GitHub Release.
+
+Dependabot keeps npm and Actions dependencies up to date.
 
 ## 🤝 Contributing
 

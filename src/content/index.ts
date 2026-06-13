@@ -13,6 +13,27 @@ import {
 } from '@features/keyboardShortcuts';
 import { autoRejectProfile, formatRejectionReason } from '@features/autoSwipe';
 import { addSocialLinks } from '@features/socialExtractor';
+import { analyzeProfile, getProfileFingerprint } from '@features/profileAnalyzer';
+
+/**
+ * Settings are loaded once and kept in sync via Storage.onSettingsChanged, so
+ * changes from the popup take effect immediately on an already-open Tinder tab
+ * without re-reading storage on every DOM mutation.
+ */
+let currentSettings: FirestarterSettings | null = null;
+
+/** Fingerprint of the card we last processed, to avoid re-processing/looping. */
+let lastFingerprint: string | null = null;
+
+/** Guards against overlapping runs while we expand + analyse a card. */
+let processing = false;
+
+async function ensureSettings(): Promise<FirestarterSettings> {
+  if (!currentSettings) {
+    currentSettings = await Storage.getSettings();
+  }
+  return currentSettings;
+}
 
 /**
  * Check if we're on the recs/matches page
@@ -22,38 +43,57 @@ function isRecsLocation(): boolean {
 }
 
 /**
- * Handle profile view change
+ * Handle profile view change.
+ *
+ * Expanding the card mutates the DOM, which re-triggers the observer; the
+ * fingerprint guard and `processing` flag ensure each card is handled exactly
+ * once instead of looping. When a fingerprint can't be derived we fall back to
+ * the `processing` flag alone, which still throttles repeated runs.
  */
 async function handleProfileChange(): Promise<void> {
-  const settings = await Storage.getSettings();
+  if (processing) {
+    return;
+  }
 
+  const settings = await ensureSettings();
   if (!settings.activated) {
     return;
   }
 
-  // Expand profile to see full info
-  expandProfile();
+  const fingerprint = getProfileFingerprint();
+  if (fingerprint && fingerprint === lastFingerprint) {
+    return;
+  }
 
-  // Add social media links
-  addSocialLinks();
+  processing = true;
+  try {
+    // Expand to reveal full bio/interests, then let the expanded content render
+    // before analysing it once.
+    expandProfile();
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-  // Auto-reject if criteria met
-  const wasRejected = autoRejectProfile(settings, (reason) => {
-    // Show notification about rejection
-    chrome.runtime.sendMessage({
-      type: 'SHOW_NOTIFICATION',
-      payload: {
-        title: 'Firestarter',
-        message: formatRejectionReason(reason),
-      },
+    const profile = analyzeProfile();
+    lastFingerprint = fingerprint;
+
+    addSocialLinks(profile);
+
+    const wasRejected = autoRejectProfile(settings, profile, (reason) => {
+      chrome.runtime.sendMessage({
+        type: 'SHOW_NOTIFICATION',
+        payload: {
+          title: 'Firestarter',
+          message: formatRejectionReason(reason),
+        },
+      });
     });
 
-    // Schedule next profile check after swipe
-    setTimeout(() => handleProfileChange(), 250);
-  });
-
-  if (wasRejected) {
-    console.log('Profile auto-rejected');
+    if (wasRejected) {
+      // The next card is a different profile; clear the guard so it's processed.
+      lastFingerprint = null;
+      console.log('Profile auto-rejected');
+    }
+  } finally {
+    processing = false;
   }
 }
 
@@ -128,9 +168,10 @@ function setupStyles(): void {
  * Toggle activation state
  */
 async function toggleActivation(): Promise<void> {
-  const settings = await Storage.getSettings();
+  const settings = await ensureSettings();
   const newActivated = !settings.activated;
 
+  // Persist; the onSettingsChanged listener refreshes currentSettings.
   await Storage.setSetting('activated', newActivated);
 
   chrome.runtime.sendMessage({
@@ -149,6 +190,12 @@ async function toggleActivation(): Promise<void> {
  */
 async function initialize(): Promise<void> {
   console.log('Firestarter: Initializing...');
+
+  // Seed settings and keep them in sync with the popup / other tabs.
+  await ensureSettings();
+  Storage.onSettingsChanged((settings) => {
+    currentSettings = settings;
+  });
 
   // Setup styles
   setupStyles();

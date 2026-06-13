@@ -50,7 +50,7 @@ jobs:
     name: Package Extension
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/claude/'))
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code

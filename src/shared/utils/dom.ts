@@ -88,18 +88,25 @@ export function xpathResultsToArray(xpathResult: XPathResult): Node[] {
 }
 
 /**
- * Find element with fallback selectors
+ * Find element with fallback selectors.
+ * Returns the first match, or null if none match. Stays quiet on the common
+ * "no match yet" case (Tinder's DOM mutates constantly); only an actually
+ * invalid selector earns a one-time warning.
  */
+const warnedSelectors = new Set<string>();
+
 export function findElement(selectors: string[]): Element | null {
   for (const selector of selectors) {
     try {
       const el = document.querySelector(selector);
       if (el) return el;
-    } catch (e) {
-      console.warn(`Invalid selector: ${selector}`);
+    } catch {
+      if (!warnedSelectors.has(selector)) {
+        warnedSelectors.add(selector);
+        console.warn(`Firestarter: invalid selector skipped: ${selector}`);
+      }
     }
   }
-  console.warn('Could not find element with selectors:', selectors);
   return null;
 }
 

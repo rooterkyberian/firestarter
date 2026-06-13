@@ -4,7 +4,6 @@
  */
 
 import { press, findByXPath } from '@shared/utils/dom';
-import { SELECTORS } from '@shared/utils/selectors';
 
 /**
  * Expand profile view

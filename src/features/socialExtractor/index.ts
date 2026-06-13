@@ -3,15 +3,14 @@
  * Extracts and displays social media links from profiles
  */
 
-import { getReportButton, analyzeProfile } from '../profileAnalyzer';
+import { getReportButton } from '../profileAnalyzer';
 import { getOrAddChildNode, createLink } from '@shared/utils/dom';
+import { ProfileData } from '@shared/types/settings';
 
 /**
  * Add social media links to profile UI
  */
-export function addSocialLinks(): void {
-  const profile = analyzeProfile();
-
+export function addSocialLinks(profile: ProfileData): void {
   if (Object.keys(profile.socialMedia).length === 0) {
     return;
   }

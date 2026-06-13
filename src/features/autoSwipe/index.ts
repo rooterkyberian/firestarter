@@ -3,8 +3,7 @@
  * Automatically swipes left based on configurable criteria
  */
 
-import { FirestarterSettings } from '@shared/types/settings';
-import { analyzeProfile } from '../profileAnalyzer';
+import { FirestarterSettings, ProfileData } from '@shared/types/settings';
 import { press } from '@shared/utils/dom';
 import { arrayAsString } from '@shared/utils/helpers';
 
@@ -32,10 +31,9 @@ export function swipeRight(): void {
  * Returns rejection reason if should reject, null otherwise
  */
 export function shouldReject(
-  settings: FirestarterSettings
+  settings: FirestarterSettings,
+  profile: ProfileData
 ): RejectionReason | null {
-  const profile = analyzeProfile();
-
   // Check distance
   if (profile.distance && profile.distance > settings.distanceLimit) {
     return {
@@ -95,13 +93,14 @@ export function shouldReject(
  */
 export function autoRejectProfile(
   settings: FirestarterSettings,
+  profile: ProfileData,
   onReject?: (reason: RejectionReason) => void
 ): boolean {
   if (!settings.autoSwipeLeft) {
     return false;
   }
 
-  const rejectionReason = shouldReject(settings);
+  const rejectionReason = shouldReject(settings, profile);
 
   if (rejectionReason) {
     console.log('Auto-rejecting due to:', rejectionReason);

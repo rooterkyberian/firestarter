@@ -3,12 +3,15 @@ import { useSettingsStore } from '@shared/config/store';
 
 export function App() {
   const settings = useSettingsStore();
+  // Stable action reference (zustand never recreates it), so the load-on-mount
+  // effect runs exactly once without depending on the whole settings object.
+  const loadSettings = useSettingsStore((state) => state.loadSettings);
   const [interestsInput, setInterestsInput] = useState('');
 
   useEffect(() => {
     // Load settings when popup opens
-    settings.loadSettings();
-  }, []);
+    loadSettings();
+  }, [loadSettings]);
 
   useEffect(() => {
     // Update interests input when settings load
