@@ -14,9 +14,11 @@ export class Storage {
     return new Promise((resolve) => {
       chrome.storage.sync.get(this.SETTINGS_KEY, (result) => {
         const settings = result[this.SETTINGS_KEY] as
-          | FirestarterSettings
+          | Partial<FirestarterSettings>
           | undefined;
-        resolve(settings || DEFAULT_SETTINGS);
+        // Merge over defaults so settings persisted before a new key was added
+        // (e.g. the per-filter switches) still resolve to a complete object.
+        resolve({ ...DEFAULT_SETTINGS, ...settings });
       });
     });
   }

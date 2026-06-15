@@ -5,9 +5,10 @@
   "type": "module",
   "description": "Enhanced Tinder Experience - Browser Extension",
   "scripts": {
-    "dev": "vite build --watch --mode development",
+    "dev": "node scripts/clean.js && vite build --watch --mode development",
+    "clean": "node scripts/clean.js",
     "generate-icons": "node scripts/generate-icons.js",
-    "prebuild": "node scripts/generate-icons.js",
+    "prebuild": "node scripts/clean.js && node scripts/generate-icons.js",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx --max-warnings 0",
@@ -19,12 +20,14 @@
     "package": "npm run build && node scripts/package-extension.js"
   },
   "dependencies": {
+    "@sentry/browser": "^10.57.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@sentry/vite-plugin": "^5.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/chrome": "^0.0.278",

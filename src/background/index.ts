@@ -5,6 +5,9 @@
 
 import { Storage } from '@shared/storage';
 import { DEFAULT_SETTINGS } from '@shared/types/settings';
+import { initSentry } from '@shared/observability/sentry';
+
+initSentry('background');
 
 /**
  * Handle extension installation
@@ -26,6 +29,29 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   } else if (details.reason === 'update') {
     console.log('Firestarter: Extension updated');
   }
+});
+
+/**
+ * Keyboard command (chrome://extensions/shortcuts). Registered at the browser
+ * level so it fires reliably even where a page or the OS would swallow an
+ * in-page keydown (e.g. Linux's Alt+Shift layout switch). We forward it to the
+ * active tab's content script, which runs the capture + title popup.
+ */
+chrome.commands.onCommand.addListener(async (command) => {
+  console.log('Firestarter: command received:', command);
+  if (command !== 'capture-page') return;
+
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (!tab?.id) return;
+
+  // The content script only runs on Tinder; on any other tab there's no
+  // receiver and sendMessage reports lastError, which we deliberately ignore.
+  chrome.tabs.sendMessage(tab.id, { type: 'CAPTURE_PAGE' }, () => {
+    void chrome.runtime.lastError;
+  });
 });
 
 /**

@@ -25,13 +25,15 @@ A powerful browser extension that enhances your Tinder experience with automatio
 - `PageDown` - Undo last swipe (Rewind)
 - `Numpad 0` - Navigate to next profile image
 - `Numpad .` - Reload page
-- `Alt+Shift+C` - Capture the current card as an anonymized selector fixture (dev)
+- `Ctrl+Shift+Y` - Capture the whole page as a selector fixture (dev; stored & exported raw — anonymize only when committing a fixture). Rebindable at `chrome://extensions/shortcuts`.
 
 ### 📊 Profile Enhancements
-- **Auto-expand profiles**: Automatically expands profiles for full information view
+- **Auto-expand profiles**: Clicks the card's name/info bar to open the full profile automatically
 - **Social media extraction**: Automatically detects and links Instagram, Snapchat, and Facebook handles
 - **Height detection**: Extracts height information from bios
 - **Interest analysis**: Shows all detected interests
+- **"Looking for" detection**: Reads the relationship-intent label (e.g. _Long-term partner_)
+- **Console dump**: On each new card, logs the parsed profile JSON (`Firestarter: profile detected …`) for debugging
 
 ### 🎨 UI Improvements
 - Enhanced profile card display
@@ -111,9 +113,10 @@ firestarter/
 
 > **Tinder selectors** are inherently fragile. They're modeled as a named,
 > instrumented registry (`src/shared/selectors/registry.ts`) and covered by
-> jsdom fixture tests. Press `Alt+Shift+C` on a live card to record an
-> anonymized fixture + a report of which selectors failed, then export it from
-> the popup's Developer section. See
+> jsdom fixture tests. Press `Ctrl+Shift+Y` (or the popup's "Capture page" button) to record a
+> raw page snapshot + a report of which selectors failed, then export it from
+> the popup's Developer section (raw; anonymize with `anonymizeHtml` only when
+> committing it as a fixture). See
 > [`docs/SELECTOR_VERIFICATION.md`](docs/SELECTOR_VERIFICATION.md).
 
 ## ⚙️ CI/CD

@@ -2,26 +2,32 @@
  * Persistence for recorded selector captures.
  *
  * Captures live in chrome.storage.local (NEVER synced — they describe real
- * profiles, even after anonymization) and are FIFO-capped. Each capture holds
- * only the anonymized HTML, the selector pass/fail report, and non-PII
- * extraction flags — no real extracted values.
+ * profiles) and are FIFO-capped. The stored HTML is RAW, and stays raw through
+ * export too — anonymization is a deliberate, separate step taken only when
+ * turning a capture into a committed test fixture (`anonymizeHtml`). Alongside
+ * the HTML each capture holds the selector pass/fail report and a small
+ * extraction summary.
  */
 
 import { SelectorReport } from '@shared/selectors/registry';
 
-/** Non-PII summary of what the extractors found (flags/counts, not values). */
+/** Summary of what the extractors found (flags/counts + the non-PII intent). */
 export interface CaptureSummary {
   distanceFound: boolean;
   heightFound: boolean;
   interestsCount: number;
   socialNetworks: string[];
+  /** Relationship intent label, e.g. "Long-term partner" (fixed enum, not PII). */
+  lookingFor: string | null;
 }
 
 export interface Capture {
+  /** User-supplied label for the capture (optional; set via the title popup). */
+  title?: string;
   capturedAt: string;
   url: string;
   appVersion: string;
-  /** Anonymized card HTML — safe to drop into a fixture. */
+  /** Raw whole-page HTML. Anonymize via `anonymizeHtml` when committing a fixture. */
   html: string;
   report: SelectorReport;
   extracted: CaptureSummary;

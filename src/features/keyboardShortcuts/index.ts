@@ -3,23 +3,59 @@
  * Provides keyboard navigation and controls for Tinder
  */
 
-import { press } from '@shared/utils/dom';
 import { resolve } from '@shared/selectors/registry';
 
 /**
- * Expand profile view
+ * Find the front card's info bar — the bottom overlay button showing name / age
+ * / distance, which Tinder expands into the full profile when clicked.
+ *
+ * Identified by semantic attributes, NOT class names (Tinder rehashes classes
+ * every build): a `[role="button"]`/`<button>` wrapping the schema.org
+ * `[itemprop="name"]`. This marker is present ONLY on collapsed cards — once a
+ * card is expanded the name is no longer a button — so "an info bar exists" is
+ * also our class-free "is collapsed" signal.
+ *
+ * Tinder preloads the next card(s) too, so several info bars coexist; we
+ * hit-test each to find the one actually on top (the front card). When
+ * hit-testing can't help (e.g. a background tab with empty layout boxes) we fall
+ * back to the last bar in DOM order, which is the front of Tinder's stack.
  */
-export function expandProfile(): void {
-  press({
-    keyCode: 38,
-    key: 'ArrowUp',
-    code: 'ArrowUp',
-  });
+function findFrontInfoButton(): HTMLElement | null {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>('[role="button"], button')
+  ).filter((el) => el.querySelector('[itemprop="name"]'));
 
-  const recCards = document.getElementsByClassName('recCard');
-  if (recCards && recCards.length > 0) {
-    (recCards[0] as HTMLElement).click();
+  for (const el of candidates) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) continue;
+    const onTop = document.elementFromPoint(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2
+    );
+    if (onTop && el.contains(onTop)) return el;
   }
+
+  return candidates[candidates.length - 1] ?? null;
+}
+
+/**
+ * Expand the current rec card to reveal the full bio and interests. Returns
+ * true when it actually triggered an expansion (the card was collapsed), so
+ * callers know to wait for the expand animation before reading the card.
+ *
+ * Clicks the front card's info bar — a real click React's onClick honors
+ * deterministically. When no info bar exists the card is already expanded (or
+ * absent): a no-op returning false, safe to call on every DOM mutation.
+ *
+ * (We deliberately don't also fire a synthetic ArrowUp here: it's the manual
+ * expand key but may *toggle*, which would re-collapse the card we just opened.)
+ */
+export function expandProfile(): boolean {
+  const infoButton = findFrontInfoButton();
+  if (!infoButton) return false;
+
+  infoButton.click();
+  return true;
 }
 
 /**
@@ -72,18 +108,12 @@ export function nextImage(): void {
 /**
  * Setup keyboard event listeners
  */
-export function setupKeyboardShortcuts(
-  onToggleActivation: () => void,
-  onCapture?: () => void
-): void {
+export function setupKeyboardShortcuts(onToggleActivation: () => void): void {
+  // Note: card capture is NOT handled here. In-page keydowns are unreliable
+  // (the page or the OS — e.g. Linux's Alt+Shift layout switch — can swallow
+  // them), so capture uses a browser-level `commands` entry instead. See the
+  // manifest's `commands` and the background worker.
   document.addEventListener('keydown', (e) => {
-    // Alt+Shift+C — capture the current card (modified key avoids accidents).
-    if (onCapture && e.altKey && e.shiftKey && e.code === 'KeyC') {
-      e.preventDefault();
-      onCapture();
-      return;
-    }
-
     switch (e.code) {
       case 'NumpadDecimal':
         // Reload page

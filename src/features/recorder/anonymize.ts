@@ -20,6 +20,7 @@
 import { PATTERNS } from '@shared/utils/selectors';
 import { bioExtractHeight, bioGetSocial } from '@features/profileAnalyzer';
 import { knownInterests } from '@features/profileAnalyzer/knownInterests';
+import { relationshipIntents } from '@features/profileAnalyzer/relationshipIntents';
 
 const PLACEHOLDER_URL = 'https://example.invalid/asset';
 const PLACEHOLDER_PHOTO = 'https://example.invalid/photo.jpg';
@@ -36,6 +37,9 @@ const SOCIAL_ALIAS: Record<string, string> = {
 };
 
 const knownInterestSet = new Set(knownInterests);
+const relationshipIntentSet = new Set(
+  relationshipIntents.map((s) => s.toLowerCase())
+);
 
 /**
  * Turn a single text node's content into a PII-free synthetic equivalent.
@@ -46,6 +50,7 @@ export function synthesizeText(raw: string): string {
 
   // UI chrome / non-PII labels preserved verbatim so locators still resolve.
   if (knownInterestSet.has(trimmed)) return raw;
+  if (relationshipIntentSet.has(trimmed.toLowerCase())) return raw; // "Looking for"
   if (/^\d+\s*\/\s*\d+$/.test(trimmed)) return raw; // image bullet "1/5"
   if (/^report\b/i.test(trimmed)) return 'REPORT Someone'; // keep prefix, drop name
   if (/^(back|rewind|show more|send compliment)$/i.test(trimmed)) return raw;
@@ -99,4 +104,18 @@ export function anonymize(root: Element): string {
   const clone = root.cloneNode(true) as Element;
   anonymizeElement(clone);
   return clone.outerHTML;
+}
+
+/**
+ * Anonymize a raw HTML string (as stored by a capture) into a fixture-safe one.
+ *
+ * Captures now store the page verbatim — anonymization is deferred to here, the
+ * fixture-creation/export path, so debugging sees real data but anything that
+ * leaves the device is scrubbed. Parsing into a detached document keeps it inert
+ * (no scripts run, no resources load).
+ */
+export function anonymizeHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  anonymizeElement(doc.documentElement);
+  return doc.documentElement.outerHTML;
 }

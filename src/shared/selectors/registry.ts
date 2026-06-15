@@ -44,7 +44,11 @@ const STRATEGIES = {
 export type ResolverName = keyof typeof STRATEGIES;
 
 /** Names that report through `recordOutcome` rather than a generic strategy. */
-export type CustomName = 'interestsContainer' | 'distanceText';
+export type CustomName =
+  | 'interestsContainer'
+  | 'distanceText'
+  | 'lookingForText'
+  | 'heightValue';
 
 export interface SelectorOutcome {
   name: string;

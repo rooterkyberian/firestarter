@@ -6,9 +6,10 @@
 import { FirestarterSettings, ProfileData } from '@shared/types/settings';
 import { press } from '@shared/utils/dom';
 import { arrayAsString } from '@shared/utils/helpers';
+import { confirmRejection } from './confirmPrompt';
 
 export interface RejectionReason {
-  type: 'distance' | 'height' | 'interests' | 'social' | 'regexp';
+  type: 'distance' | 'height' | 'interests' | 'lookingFor' | 'social' | 'regexp';
   details: unknown;
 }
 
@@ -35,7 +36,11 @@ export function shouldReject(
   profile: ProfileData
 ): RejectionReason | null {
   // Check distance
-  if (profile.distance && profile.distance > settings.distanceLimit) {
+  if (
+    settings.filterDistanceEnabled &&
+    profile.distance &&
+    profile.distance > settings.distanceLimit
+  ) {
     return {
       type: 'distance',
       details: profile.distance,
@@ -43,7 +48,7 @@ export function shouldReject(
   }
 
   // Check interests blacklist
-  if (profile.interests.size > 0) {
+  if (settings.filterInterestsEnabled && profile.interests.size > 0) {
     const hasBlacklistedInterest = settings.interestsBlacklist.some(
       (interest) => profile.interests.has(interest)
     );
@@ -55,8 +60,24 @@ export function shouldReject(
     }
   }
 
+  // Check "Looking for" relationship intent blacklist
+  if (
+    settings.filterLookingForEnabled &&
+    profile.lookingFor &&
+    settings.lookingForBlacklist.includes(profile.lookingFor)
+  ) {
+    return {
+      type: 'lookingFor',
+      details: profile.lookingFor,
+    };
+  }
+
   // Check height
-  if (profile.height && profile.height > settings.heightLimit) {
+  if (
+    settings.filterHeightEnabled &&
+    profile.height &&
+    profile.height > settings.heightLimit
+  ) {
     return {
       type: 'height',
       details: profile.height,
@@ -64,17 +85,21 @@ export function shouldReject(
   }
 
   // Check social media for VIP indicators
-  for (const [socialNetworkName, name] of Object.entries(profile.socialMedia)) {
-    if (name.toLowerCase().includes('vip')) {
-      return {
-        type: 'social',
-        details: { [socialNetworkName]: name },
-      };
+  if (settings.filterSocialEnabled) {
+    for (const [socialNetworkName, name] of Object.entries(
+      profile.socialMedia
+    )) {
+      if (name.toLowerCase().includes('vip')) {
+        return {
+          type: 'social',
+          details: { [socialNetworkName]: name },
+        };
+      }
     }
   }
 
   // Check required regexp
-  if (settings.requiredRegexp && profile.bio) {
+  if (settings.filterRegexpEnabled && settings.requiredRegexp && profile.bio) {
     const requiredRegexp = settings.requiredRegexp.trim();
     if (requiredRegexp && !profile.bio.match(RegExp(requiredRegexp, 'i'))) {
       return {
@@ -88,32 +113,69 @@ export function shouldReject(
 }
 
 /**
- * Auto-reject profile if criteria met
- * Returns true if rejected, false otherwise
+ * Auto-reject profile if criteria met.
+ *
+ * Resolves `true` if the profile was swiped left, `false` otherwise. A
+ * confirmation dialog stating the reason is shown first; it auto-confirms after
+ * `settings.autoRejectCountdown` seconds (or waits indefinitely when that is 0).
+ * Declining (or dismissing) the dialog keeps the profile and resolves `false`.
  */
-export function autoRejectProfile(
+export async function autoRejectProfile(
   settings: FirestarterSettings,
   profile: ProfileData,
   onReject?: (reason: RejectionReason) => void
-): boolean {
+): Promise<boolean> {
   if (!settings.autoSwipeLeft) {
     return false;
   }
 
   const rejectionReason = shouldReject(settings, profile);
-
-  if (rejectionReason) {
-    console.log('Auto-rejecting due to:', rejectionReason);
-
-    if (onReject) {
-      onReject(rejectionReason);
-    }
-
-    swipeLeft();
-    return true;
+  if (!rejectionReason) {
+    return false;
   }
 
-  return false;
+  const confirmed = await confirmRejection(
+    describeRejectionReason(rejectionReason),
+    settings.autoRejectCountdown
+  );
+  if (!confirmed) {
+    console.log('Auto-rejection cancelled by user');
+    return false;
+  }
+
+  if (onReject) {
+    onReject(rejectionReason);
+  }
+
+  swipeLeft();
+  return true;
+}
+
+/**
+ * Human-readable, present-tense reason shown in the confirmation dialog
+ * (distinct from formatRejectionReason, which is past-tense for notifications).
+ */
+export function describeRejectionReason(reason: RejectionReason): string {
+  switch (reason.type) {
+    case 'distance':
+      return `This profile is ${reason.details} km away, beyond your distance limit.`;
+    case 'height':
+      return `This profile's height (${reason.details} cm) is above your limit.`;
+    case 'interests':
+      return `This profile has a blacklisted interest. Interests: ${arrayAsString([
+        reason.details,
+      ])}`;
+    case 'lookingFor':
+      return `This profile is looking for "${reason.details}", which you reject.`;
+    case 'social':
+      return `This profile's social handle looks like a VIP/promo account: ${arrayAsString(
+        [reason.details]
+      )}`;
+    case 'regexp':
+      return `This profile's bio did not match your required pattern.`;
+    default:
+      return `This profile matched a rejection rule (${reason.type}).`;
+  }
 }
 
 /**

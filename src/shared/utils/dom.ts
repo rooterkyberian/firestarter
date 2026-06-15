@@ -17,33 +17,48 @@ export function addGlobalStyle(css: string): void {
 }
 
 /**
- * Simulate keyboard event
+ * Simulate a keyboard event (keydown + keyup).
+ *
+ * Dispatched on <body> by default so it bubbles to document/window where
+ * Tinder's global key handlers live. Two non-obvious details matter for those
+ * handlers to actually fire:
+ *  - `code` must be forwarded (the old version dropped it); some handlers key off
+ *    `event.code` rather than `event.key`.
+ *  - The `KeyboardEvent` constructor silently ignores `keyCode`/`which`, leaving
+ *    them 0. Legacy handlers (Tinder's arrow-key navigation among them) still
+ *    read `keyCode`, so we define it on the instance after construction.
  */
 export function press(
-  { keyCode, charCode, key }: Partial<KeyboardEvent>,
+  { keyCode, key, code }: Partial<KeyboardEvent>,
   evtTarget: HTMLElement | null = null
 ): void {
   if (!evtTarget) {
     evtTarget = document.getElementsByTagName('body')[0] as HTMLElement;
   }
 
-  const commonKeyEventData = {
-    altKey: false,
-    bubbles: true,
-    cancelBubble: false,
-    cancelable: true,
-    charCode: 0,
-    composed: true,
-    ctrlKey: false,
-    currentTarget: null,
-    defaultPrevented: true,
-    detail: 0,
-    eventPhase: 0,
+  const build = (type: 'keydown' | 'keyup'): KeyboardEvent => {
+    const event = new KeyboardEvent(type, {
+      key,
+      code,
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    });
+    if (keyCode != null) {
+      Object.defineProperty(event, 'keyCode', {
+        configurable: true,
+        get: () => keyCode,
+      });
+      Object.defineProperty(event, 'which', {
+        configurable: true,
+        get: () => keyCode,
+      });
+    }
+    return event;
   };
 
-  const evtData = { ...commonKeyEventData, keyCode, charCode, key };
-  evtTarget.dispatchEvent(new KeyboardEvent('keydown', evtData));
-  evtTarget.dispatchEvent(new KeyboardEvent('keyup', evtData));
+  evtTarget.dispatchEvent(build('keydown'));
+  evtTarget.dispatchEvent(build('keyup'));
 }
 
 /**

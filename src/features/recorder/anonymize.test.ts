@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { anonymize, synthesizeText } from './anonymize';
+import { anonymize, anonymizeHtml, synthesizeText } from './anonymize';
 import { analyzeProfile } from '@features/profileAnalyzer';
 
 // A card stuffed with obvious fake PII to prove none of it survives.
@@ -31,6 +31,13 @@ describe('synthesizeText', () => {
     expect(synthesizeText('Travel')).toBe('Travel');
     expect(synthesizeText('1/5')).toBe('1/5');
     expect(synthesizeText('REPORT Jane Doe')).toBe('REPORT Someone');
+  });
+
+  it('preserves "Looking for" relationship-intent labels verbatim', () => {
+    expect(synthesizeText('Long-term partner')).toBe('Long-term partner');
+    expect(synthesizeText('Still figuring it out')).toBe(
+      'Still figuring it out'
+    );
   });
 
   it('synthesizes token-bearing text and redacts free prose', () => {
@@ -90,5 +97,27 @@ describe('anonymize', () => {
     expect(data.socialMedia.instagram).toBe('example_handle');
     expect(data.interests.has('Travel')).toBe(true);
     expect(data.interests.has('Coffee')).toBe(true);
+  });
+});
+
+describe('anonymizeHtml', () => {
+  it('scrubs PII from a raw HTML string but keeps it extractable', () => {
+    const raw = `<!DOCTYPE html><html><body>${REAL_CARD}</body></html>`;
+    const out = anonymizeHtml(raw);
+
+    expect(out).not.toContain('Jane');
+    expect(out).not.toContain('realjane_99');
+    expect(out).toContain('12 km away');
+    expect(out).toContain('Travel');
+
+    // Round-trips back into a parseable, extractable document.
+    document.body.innerHTML = out;
+    expect(analyzeProfile().distance).toBe(12);
+  });
+
+  it('preserves a relationship-intent label through a raw capture', () => {
+    const raw = `<html><body><div class="profileCard__card">
+      <div>Real Person, 28</div><div>Long-term partner</div></body></html>`;
+    expect(anonymizeHtml(raw)).toContain('Long-term partner');
   });
 });
